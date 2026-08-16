@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emlak CRM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F3EC;
+    --ink:#22303A;
+    --ink-soft:#5B6772;
+    --line:#DED8C8;
+    --line-strong:#C7BFA8;
+    --card:#FFFFFF;
+    --bronze:#AD8148;
+    --bronze-dark:#7C5B31;
+    --buyer:#2F6E63;
+    --buyer-bg:#E4F0EC;
+    --buyer-dark:#1E4A42;
+    --seller:#B45B33;
+    --seller-bg:#F7E7DD;
+    --seller-dark:#7E3F22;
+    --danger:#A6392E;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(34,48,58,0.06), 0 1px 1px rgba(34,48,58,0.04);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{max-width:960px;margin:0 auto;padding:28px 20px 80px;}
+
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:22px;flex-wrap:wrap;}
+  header.top h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:30px;
+    margin:0 0 2px;
+    letter-spacing:-0.01em;
+  }
+  header.top p{margin:0;color:var(--ink-soft);font-size:14px;}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px;}
+  .stat{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:12px 14px;
+  }
+  .stat .num{font-family:'Fraunces',serif;font-size:24px;font-weight:600;line-height:1.1;}
+  .stat .lbl{font-size:12px;color:var(--ink-soft);margin-top:3px;}
+
+  .signboard{
+    display:flex;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:4px;
+    margin-bottom:16px;
+    gap:4px;
+  }
+  .signboard button{
+    flex:1;
+    border:none;
+    background:transparent;
+    padding:12px 10px;
+    font-family:'Fraunces',serif;
+    font-size:16px;
+    font-weight:500;
+    color:var(--ink-soft);
+    border-radius:7px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    transition:background .15s ease, color .15s ease;
+  }
+  .signboard button .count{
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:600;
+    padding:1px 7px;
+    border-radius:20px;
+    background:var(--line);
+    color:var(--ink-soft);
+  }
+  .signboard button.active.buyer{background:var(--buyer-bg);color:var(--buyer-dark);}
+  .signboard button.active.buyer .count{background:var(--buyer);color:#fff;}
+  .signboard button.active.seller{background:var(--seller-bg);color:var(--seller-dark);}
+  .signboard button.active.seller .count{background:var(--seller);color:#fff;}
+
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+  .toolbar input[type=text], .toolbar select{
+    height:38px;
+    border:1px solid var(--line-strong);
+    background:#fff;
+    border-radius:8px;
+    padding:0 12px;
+    font-size:14px;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+  }
+  .toolbar input[type=text]{flex:1;min-width:160px;}
+  .toolbar select{min-width:140px;}
+  .btn-primary{
+    height:38px;
+    border:none;
+    padding:0 16px;
+    border-radius:8px;
+    background:var(--ink);
+    color:#fff;
+    font-size:14px;
+    font-weight:500;
+    cursor:pointer;
+    display:flex;align-items:center;gap:6px;
+  }
+  .btn-primary:hover{background:var(--bronze-dark);}
+  .btn-secondary{
+    height:38px;
+    border:1px solid var(--line-strong);
+    padding:0 14px;
+    border-radius:8px;
+    background:#fff;
+    color:var(--ink);
+    font-size:14px;
+    cursor:pointer;
+  }
+  .btn-secondary:hover{background:var(--paper);}
+
+  #list{display:flex;flex-direction:column;gap:10px;}
+  .empty{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+    background:var(--card);
+    border:1px dashed var(--line-strong);
+    border-radius:var(--radius);
+  }
+  .empty .tag-icon{font-size:26px;margin-bottom:8px;}
+
+  .customer-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    box-shadow:var(--shadow);
+    cursor:pointer;
+    position:relative;
+  }
+  .customer-card .row1{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .customer-card .name{font-family:'Fraunces',serif;font-size:17px;font-weight:600;margin:0;}
+  .customer-card .sub{font-size:13px;color:var(--ink-soft);margin-top:2px;}
+  .badge{
+    font-size:11px;
+    font-weight:600;
+    padding:3px 9px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+  .badge.st-Yeni{background:#EEF0E4;color:#4C5A2E;}
+  .badge.st-Iletisimde{background:#E6F1FB;color:#0C447C;}
+  .badge.st-Gorusuluyor{background:#FAEEDA;color:#854F0B;}
+  .badge.st-Teklif{background:#F0E4FA;color:#5A2E8A;}
+  .badge.st-Tamamlandi{background:#EAF3DE;color:#3B6D11;}
+  .badge.st-Pasif{background:#F1EFE8;color:#5F5E5A;}
+
+  .customer-card .row2{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;font-size:13px;color:var(--ink-soft);}
+  .customer-card .row2 span{display:flex;align-items:center;gap:5px;}
+  .customer-card .price-tag{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:14px;
+    color:var(--ink);
+  }
+  .pin{
+    position:absolute;top:14px;right:16px;
+    width:8px;height:8px;border-radius:50%;
+  }
+  .pin.buyer{background:var(--buyer);}
+  .pin.seller{background:var(--seller);}
+
+  .note-preview{margin-top:8px;font-size:13px;color:var(--ink-soft);font-style:italic;}
+
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(34,48,58,0.45);
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;z-index:50;
+  }
+  .modal{
+    background:#fff;border-radius:14px;max-width:520px;width:100%;
+    max-height:88vh;overflow-y:auto;padding:24px;
+    box-shadow:0 12px 40px rgba(0,0,0,0.2);
+  }
+  .modal h2{font-family:'Fraunces',serif;font-weight:600;font-size:20px;margin:0 0 4px;}
+  .modal .modal-sub{color:var(--ink-soft);font-size:13px;margin:0 0 18px;}
+  .form-group{margin-bottom:13px;}
+  .form-group label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.03em;}
+  .form-group input, .form-group select, .form-group textarea{
+    width:100%;
+    border:1px solid var(--line-strong);
+    border-radius:8px;
+    padding:9px 11px;
+    font-size:14px;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    background:#fff;
+  }
+  .form-group textarea{resize:vertical;min-height:60px;}
+  .form-row{display:flex;gap:10px;}
+  .form-row .form-group{flex:1;}
+  .type-toggle{display:flex;gap:8px;margin-bottom:16px;}
+  .type-toggle button{
+    flex:1;padding:10px;border-radius:8px;border:1.5px solid var(--line-strong);
+    background:#fff;font-size:14px;font-weight:500;cursor:pointer;color:var(--ink-soft);
+  }
+  .type-toggle button.sel-buyer{border-color:var(--buyer);background:var(--buyer-bg);color:var(--buyer-dark);}
+  .type-toggle button.sel-seller{border-color:var(--seller);background:var(--seller-bg);color:var(--seller-dark);}
+  .modal-actions{display:flex;justify-content:space-between;gap:10px;margin-top:20px;}
+  .modal-actions .left{display:flex;gap:8px;}
+  .err{color:var(--danger);font-size:12px;margin-top:4px;display:none;}
+
+  .listings-section{border-top:1px solid var(--line);margin-top:4px;padding-top:14px;}
+  .listings-section h3{font-family:'Fraunces',serif;font-size:15px;font-weight:600;margin:0 0 3px;}
+  .listings-section .hint{font-size:12px;color:var(--ink-soft);margin:0 0 12px;}
+  .listing-row{
+    background:var(--buyer-bg);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 10px;
+    margin-bottom:8px;
+  }
+  .listing-row .lr-top{display:flex;gap:8px;margin-bottom:6px;}
+  .listing-row input[type=text]{
+    border:1px solid var(--line-strong);
+    border-radius:6px;
+    padding:7px 9px;
+    font-size:13px;
+    font-family:'Inter',sans-serif;
+    background:#fff;
+  }
+  .listing-row .lr-title{flex:1.1;}
+  .listing-row .lr-url{flex:1.4;}
+  .listing-row .lr-bottom{display:flex;gap:8px;align-items:center;}
+  .listing-row select{
+    border:1px solid var(--line-strong);
+    border-radius:6px;
+    padding:6px 8px;
+    font-size:12px;
+    background:#fff;
+  }
+  .listing-row .lr-remove{
+    margin-left:auto;
+    border:none;background:transparent;color:var(--danger);
+    font-size:12px;cursor:pointer;padding:4px 6px;
+  }
+  .add-listing-btn{
+    width:100%;
+    border:1.5px dashed var(--line-strong);
+    background:transparent;
+    border-radius:8px;
+    padding:9px;
+    font-size:13px;
+    color:var(--buyer-dark);
+    cursor:pointer;
+    margin-top:2px;
+  }
+  .add-listing-btn:hover{background:var(--buyer-bg);}
+  .listing-badge{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:12px;color:var(--buyer-dark);
+    background:var(--buyer-bg);
+    padding:3px 9px;border-radius:20px;margin-top:8px;
+  }
+  .lstatus-Gösterildi{color:#0C447C;}
+  .lstatus-Sunuldu{color:#854F0B;}
+  .lstatus-Beğendi{color:#3B6D11;}
+  .lstatus-Reddetti{color:#A6392E;}
+
+  .portfolio-toggle{display:flex;gap:8px;margin-bottom:12px;}
+  .portfolio-toggle button{
+    flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--line-strong);
+    background:#fff;font-size:13px;font-weight:500;cursor:pointer;color:var(--ink-soft);
+  }
+  .portfolio-toggle button.sel-nego{border-color:#B08650;background:#FAEEDA;color:#854F0B;}
+  .portfolio-toggle button.sel-listed{border-color:var(--seller);background:var(--seller-bg);color:var(--seller-dark);}
+  .portfolio-badge{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:12px;padding:3px 9px;border-radius:20px;margin-top:8px;
+  }
+  .portfolio-badge.listed{background:var(--seller-bg);color:var(--seller-dark);}
+  .portfolio-badge.nego{background:#FAEEDA;color:#854F0B;}
+
+  @media (max-width:640px){
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .form-row{flex-direction:column;}
+  }
+
+  .brand-block{display:flex;align-items:center;gap:12px;}
+  .logo-img{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid var(--line);}
+  .header-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+  .logo-upload{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+  .logo-preview{
+    width:56px;height:56px;border-radius:10px;border:1px dashed var(--line-strong);
+    background:var(--paper);display:flex;align-items:center;justify-content:center;
+    color:var(--ink-soft);font-size:11px;overflow:hidden;flex-shrink:0;
+  }
+  .logo-preview img{width:100%;height:100%;object-fit:cover;}
+
+  .feature-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px 10px;}
+  .feature-fields .form-group{margin-bottom:0;}
+
+  .report-filters{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
+  .checkbox-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .checkbox-grid label{
+    display:flex;align-items:center;gap:5px;
+    font-size:13px;border:1px solid var(--line-strong);border-radius:20px;
+    padding:5px 12px;cursor:pointer;background:#fff;
+  }
+  .checkbox-grid input{margin:0;}
+  .report-results{border-top:1px solid var(--line);padding-top:14px;margin-top:4px;}
+  .report-results .rcount{font-size:13px;color:var(--ink-soft);margin-bottom:10px;}
+  .report-row{
+    display:flex;justify-content:space-between;gap:10px;
+    padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;
+  }
+  .report-row:last-child{border-bottom:none;}
+  .report-row .rname{font-weight:500;}
+  .report-row .rmeta{color:var(--ink-soft);}
+  .report-actions{display:flex;gap:8px;margin-top:14px;}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+  .chip{
+    display:flex;align-items:center;gap:6px;
+    background:var(--buyer-bg);color:var(--buyer-dark);
+    font-size:13px;padding:5px 6px 5px 12px;border-radius:20px;
+  }
+  .chip button{
+    border:none;background:transparent;color:var(--buyer-dark);
+    cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;
+    display:flex;align-items:center;
+  }
+  .multiselect-wrap{position:relative;}
+  .suggest-dropdown{
+    position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:10;
+    background:#fff;border:1px solid var(--line-strong);border-radius:8px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.12);
+    max-height:180px;overflow-y:auto;
+  }
+  .suggest-dropdown .opt{
+    padding:8px 12px;font-size:13px;cursor:pointer;
+  }
+  .suggest-dropdown .opt:hover{background:var(--paper);}
+  .suggest-dropdown .opt.add-new{color:var(--buyer-dark);font-weight:500;}
+  .suggest-dropdown .empty-opt{padding:8px 12px;font-size:12px;color:var(--ink-soft);}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="brand-block">
+      <img id="logoImg" class="logo-img" style="display:none;" alt="Logo">
+      <div>
+        <h1 id="companyNameEl">Emlak CRM</h1>
+        <p id="agentLineEl">Alıcı ve satıcı müşterilerinizi tek yerden yönetin</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" id="reportBtn">Rapor al</button>
+      <button class="btn-secondary" id="profileBtn">Firma bilgilerim</button>
+      <button class="btn-primary" id="addBtn">+ Yeni Müşteri</button>
+    </div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="signboard">
+    <button id="tabBuyer" class="active buyer">Alıcılar <span class="count" id="countBuyer">0</span></button>
+    <button id="tabSeller" class="seller">Satıcılar <span class="count" id="countSeller">0</span></button>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="İsim, telefon, konum, bütçe, oda sayısı, kat, not... ara">
+    <select id="dealTypeFilter">
+      <option value="">Satılık + Kiralık</option>
+      <option value="satilik">Sadece satılık arayanlar</option>
+      <option value="kiralik">Sadece kiralık arayanlar</option>
+    </select>
+    <select id="statusFilter">
+      <option value="">Tüm durumlar</option>
+      <option value="Yeni">Yeni</option>
+      <option value="İletişimde">İletişimde</option>
+      <option value="Görüşülüyor">Görüşülüyor</option>
+      <option value="Teklif Aşamasında">Teklif aşamasında</option>
+      <option value="Tamamlandı">Tamamlandı</option>
+      <option value="Pasif">Pasif</option>
+    </select>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<script>
+let customers = [];
+
+// --- Resilient storage adapter: tries real persistent storage first, falls back to
+// in-memory (this session only) if it fails, so the app never blocks the user with a
+// save error. Reads check the memory overlay first so fallback data stays visible. ---
+const memoryStore = {};
+let storageFallbackNotified = false;
+function notifyStorageFallback(){
+  if(storageFallbackNotified) return;
+  storageFallbackNotified = true;
+  showToast('Kalıcı depolamada geçici bir sorun var, değişiklikleriniz bu oturumda tutuluyor.', 'error');
+}
+async function adapterGet(key, shared){
+  if(Object.prototype.hasOwnProperty.call(memoryStore, key)){
+    return {key, value: memoryStore[key], shared};
+  }
+  try{
+    return await window.storage.get(key, shared);
+  }catch(e){
+    return null;
+  }
+}
+async function adapterSet(key, value, shared){
+  try{
+    const r = await window.storage.set(key, value, shared);
+    if(r){
+      delete memoryStore[key];
+      return r;
+    }
+    throw new Error('storage.set returned null for ' + key);
+  }catch(e){
+    console.warn('Persistent storage.set failed for "' + key + '", using in-memory fallback:', e);
+    memoryStore[key] = value;
+    notifyStorageFallback();
+    return {key, value, shared};
+  }
+}
+async function adapterDelete(key, shared){
+  delete memoryStore[key];
+  try{
+    await window.storage.delete(key, shared);
+  }catch(e){ /* already removed from memory overlay; real storage may not have had it either */ }
+  return {key, deleted:true, shared};
+}
+async function adapterList(prefix, shared){
+  let realKeys = [];
+  try{
+    const r = await window.storage.list(prefix, shared);
+    realKeys = (r && r.keys) || [];
+  }catch(e){ /* fall through to memory-only keys */ }
+  const memKeys = Object.keys(memoryStore).filter(k => k.startsWith(prefix||''));
+  return {keys: Array.from(new Set([...realKeys, ...memKeys]))};
+}
+
+let activeTab = 'alici';
+let editingId = null;
+let profile = {companyName:'', agentName:'', phone:'', email:'', address:'', logo:''};
+
+const PROPERTY_TYPES = ['Daire','Villa','Rezidans','Yazlık','İşyeri','Arsa','Tarla'];
+const FEATURE_SCHEMAS = {
+  konut: [
+    {key:'odaSayisi', label:'Oda sayısı', placeholder:'Örn. 3+1'},
+    {key:'m2', label:'m² (brüt)', placeholder:'Örn. 120'},
+    {key:'binaYasi', label:'Bina yaşı', placeholder:'Örn. 5'},
+    {key:'kat', label:'Bulunduğu kat', placeholder:'Örn. 3'}
+  ],
+  arsa: [
+    {key:'m2', label:'m²', placeholder:'Örn. 500'},
+    {key:'imarDurumu', label:'İmar durumu', placeholder:'Örn. Konut imarlı'},
+    {key:'adaParsel', label:'Ada / Parsel', placeholder:'Örn. 123 / 45'}
+  ],
+  tarla: [
+    {key:'donum', label:'Dönüm', placeholder:'Örn. 10'},
+    {key:'tapuDurumu', label:'Tapu durumu', placeholder:'Örn. Tarla'},
+    {key:'sulama', label:'Sulama durumu', placeholder:'Örn. Var / Yok'}
+  ]
+};
+function schemaKeyFor(pt){
+  if(pt === 'Arsa') return 'arsa';
+  if(pt === 'Tarla') return 'tarla';
+  return 'konut';
+}
+function featuresSummary(c){
+  const schema = FEATURE_SCHEMAS[schemaKeyFor(c.propertyType)];
+  if(!c.features) return '';
+  const parts = schema.map(f => c.features[f.key] ? c.features[f.key] : null).filter(Boolean);
+  return parts.join(' · ');
+}
+function locationSummary(c){
+  const mah = c.type === 'alici' ? (c.mahalleler && c.mahalleler.length ? c.mahalleler.join(' / ') : '') : (c.mahalle || '');
+  return [mah, c.ilce, c.il].filter(Boolean).join(', ') || '-';
+}
+
+const IL_LIST = ['Adana','Adıyaman','Afyonkarahisar','Ağrı','Aksaray','Amasya','Ankara','Antalya','Ardahan','Artvin','Aydın','Balıkesir','Bartın','Batman','Bayburt','Bilecik','Bingöl','Bitlis','Bolu','Burdur','Bursa','Çanakkale','Çankırı','Çorum','Denizli','Diyarbakır','Düzce','Edirne','Elazığ','Erzincan','Erzurum','Eskişehir','Gaziantep','Giresun','Gümüşhane','Hakkari','Hatay','Iğdır','Isparta','İstanbul','İzmir','Kahramanmaraş','Karabük','Karaman','Kars','Kastamonu','Kayseri','Kilis','Kırıkkale','Kırklareli','Kırşehir','Kocaeli','Konya','Kütahya','Malatya','Manisa','Mardin','Mersin','Muğla','Muş','Nevşehir','Niğde','Ordu','Osmaniye','Rize','Sakarya','Samsun','Siirt','Sinop','Sivas','Şanlıurfa','Şırnak','Tekirdağ','Tokat','Trabzon','Tunceli','Uşak','Van','Yalova','Yozgat','Zonguldak'];
+
+let addressMaster = { ilceByIl: {}, mahalleByKey: {} };
+function addressKey(il, ilce){ return (il||'') + '||' + (ilce||''); }
+
+async function loadAddressMaster(){
+  try{
+    const r = await adapterGet('addressMaster', false);
+    if(r && r.value) addressMaster = JSON.parse(r.value);
+  }catch(e){ addressMaster = { ilceByIl: {}, mahalleByKey: {} }; }
+  if(!addressMaster.ilceByIl) addressMaster.ilceByIl = {};
+  if(!addressMaster.mahalleByKey) addressMaster.mahalleByKey = {};
+}
+async function saveAddressMaster(){
+  const result = await adapterSet('addressMaster', JSON.stringify(addressMaster), false);
+  if(!result) throw new Error('storage.set returned null for addressMaster');
+}
+let addressMasterDirty = false;
+function addIlce(il, ilce){
+  if(!il || !ilce) return;
+  const trimmed = ilce.trim();
+  if(!trimmed) return;
+  if(!addressMaster.ilceByIl[il]) addressMaster.ilceByIl[il] = [];
+  if(!addressMaster.ilceByIl[il].some(x => x.toLowerCase() === trimmed.toLowerCase())){
+    addressMaster.ilceByIl[il].push(trimmed);
+    addressMasterDirty = true;
+  }
+}
+function addMahalle(il, ilce, mahalle){
+  if(!il || !ilce || !mahalle) return;
+  const trimmed = mahalle.trim();
+  if(!trimmed) return;
+  const key = addressKey(il, ilce);
+  if(!addressMaster.mahalleByKey[key]) addressMaster.mahalleByKey[key] = [];
+  if(!addressMaster.mahalleByKey[key].some(x => x.toLowerCase() === trimmed.toLowerCase())){
+    addressMaster.mahalleByKey[key].push(trimmed);
+    addressMasterDirty = true;
+  }
+}
+async function flushAddressMasterIfDirty(){
+  if(!addressMasterDirty) return;
+  addressMasterDirty = false;
+  try{
+    await saveAddressMaster();
+  }catch(e){
+    console.error('addressMaster save error:', e);
+    // Non-fatal: learned district/neighborhood suggestions just won't persist this time.
+  }
+}
+
+// --- Static offline dataset: Turkey's 81 provinces -> 973 districts (verified, no network needed) ---
+const IL_ILCE_DATA = {"Adana":["Aladağ","Ceyhan","Feke","Karaisalı","Karataş","Kozan","Pozantı","Saimbeyli","Sarıçam","Seyhan","Tufanbeyli","Yumurtalık","Yüreğir","Çukurova","İmamoğlu"],"Adıyaman":["Besni","Gerger","Gölbaşı","Kahta","Merkez","Samsat","Sincik","Tut","Çelikhan"],"Afyonkarahisar":["Bayat","Başmakçı","Bolvadin","Dazkırı","Dinar","Emirdağ","Evciler","Hocalar","Kızılören","Merkez","Sandıklı","Sinanpaşa","Sultandağı","Çay","Çobanlar","İhsaniye","İscehisar","Şuhut"],"Ağrı":["Diyadin","Doğubayazıt","Eleşkirt","Hamur","Merkez","Patnos","Taşlıçay","Tutak"],"Amasya":["Göynücek","Gümüşhacıköy","Hamamözü","Merkez","Merzifon","Suluova","Taşova"],"Ankara":["Akyurt","Altındağ","Ayaş","Bala","Beypazarı","Elmadağ","Etimesgut","Evren","Gölbaşı","Güdül","Haymana","Kahramankazan","Kalecik","Keçiören","Kızılcahamam","Mamak","Nallıhan","Polatlı","Pursaklar","Sincan","Yenimahalle","Çamlıdere","Çankaya","Çubuk","Şereflikoçhisar"],"Antalya":["Akseki","Aksu","Alanya","Demre","Döşemealtı","Elmalı","Finike","Gazipaşa","Gündoğmuş","Kaş","Kemer","Kepez","Konyaaltı","Korkuteli","Kumluca","Manavgat","Muratpaşa","Serik","İbradı"],"Artvin":["Ardanuç","Arhavi","Borçka","Hopa","Kemalpaşa","Merkez","Murgul","Yusufeli","Şavşat"],"Aydın":["Bozdoğan","Buharkent","Didim","Efeler","Germencik","Karacasu","Karpuzlu","Koçarlı","Kuyucak","Kuşadası","Köşk","Nazilli","Sultanhisar","Söke","Yenipazar","Çine","İncirliova"],"Balıkesir":["Altıeylül","Ayvalık","Balya","Bandırma","Bigadiç","Burhaniye","Dursunbey","Edremit","Erdek","Gömeç","Gönen","Havran","Karesi","Kepsut","Manyas","Marmara","Savaştepe","Susurluk","Sındırgı","İvrindi"],"Bilecik":["Bozüyük","Gölpazarı","Merkez","Osmaneli","Pazaryeri","Söğüt","Yenipazar","İnhisar"],"Bingöl":["Adaklı","Genç","Karlıova","Kiğı","Merkez","Solhan","Yayladere","Yedisu"],"Bitlis":["Adilcevaz","Ahlat","Güroymak","Hizan","Merkez","Mutki","Tatvan"],"Bolu":["Dörtdivan","Gerede","Göynük","Kıbrıscık","Mengen","Merkez","Mudurnu","Seben","Yeniçağa"],"Burdur":["Altınyayla","Ağlasun","Bucak","Gölhisar","Karamanlı","Kemer","Merkez","Tefenni","Yeşilova","Çavdır","Çeltikçi"],"Bursa":["Büyükorhan","Gemlik","Gürsu","Harmancık","Karacabey","Keles","Kestel","Mudanya","Mustafakemalpaşa","Nilüfer","Orhaneli","Orhangazi","Osmangazi","Yenişehir","Yıldırım","İnegöl","İznik"],"Çanakkale":["Ayvacık","Bayramiç","Biga","Bozcaada","Eceabat","Ezine","Gelibolu","Gökçeada","Lapseki","Merkez","Yenice","Çan"],"Çankırı":["Atkaracalar","Bayramören","Eldivan","Ilgaz","Korgun","Kurşunlu","Kızılırmak","Merkez","Orta","Yapraklı","Çerkeş","Şabanözü"],"Çorum":["Alaca","Bayat","Boğazkale","Dodurga","Kargı","Laçin","Mecitözü","Merkez","Ortaköy","Osmancık","Oğuzlar","Sungurlu","Uğurludağ","İskilip"],"Denizli":["Acıpayam","Babadağ","Baklan","Bekilli","Beyağaç","Bozkurt","Buldan","Güney","Honaz","Kale","Merkezefendi","Pamukkale","Sarayköy","Serinhisar","Tavas","Çal","Çameli","Çardak","Çivril"],"Diyarbakır":["Bağlar","Bismil","Dicle","Ergani","Eğil","Hani","Hazro","Kayapınar","Kocaköy","Kulp","Lice","Silvan","Sur","Yenişehir","Çermik","Çüngüş","Çınar"],"Edirne":["Enez","Havsa","Keşan","Lalapaşa","Meriç","Merkez","Süloğlu","Uzunköprü","İpsala"],"Elazığ":["Alacakaya","Arıcak","Ağın","Baskil","Karakoçan","Keban","Kovancılar","Maden","Merkez","Palu","Sivrice"],"Erzincan":["Kemah","Kemaliye","Merkez","Otlukbeli","Refahiye","Tercan","Çayırlı","Üzümlü","İliç"],"Erzurum":["Aziziye","Aşkale","Horasan","Hınıs","Karayazı","Karaçoban","Köprüköy","Narman","Oltu","Olur","Palandöken","Pasinler","Pazaryolu","Tekman","Tortum","Uzundere","Yakutiye","Çat","İspir","Şenkaya"],"Eskişehir":["Alpu","Beylikova","Günyüzü","Han","Mahmudiye","Mihalgazi","Mihalıççık","Odunpazarı","Sarıcakaya","Seyitgazi","Sivrihisar","Tepebaşı","Çifteler","İnönü"],"Gaziantep":["Araban","Karkamış","Nizip","Nurdağı","Oğuzeli","Yavuzeli","İslahiye","Şahinbey","Şehitkamil"],"Giresun":["Alucra","Bulancak","Dereli","Doğankent","Espiye","Eynesil","Görele","Güce","Keşap","Merkez","Piraziz","Tirebolu","Yağlıdere","Çamoluk","Çanakçı","Şebinkarahisar"],"Gümüşhane":["Kelkit","Köse","Kürtün","Merkez","Torul","Şiran"],"Hakkari":["Derecik","Merkez","Yüksekova","Çukurca","Şemdinli"],"Hatay":["Altınözü","Antakya","Arsuz","Belen","Defne","Dörtyol","Erzin","Hassa","Kumlu","Kırıkhan","Payas","Reyhanlı","Samandağ","Yayladağı","İskenderun"],"Isparta":["Aksu","Atabey","Eğirdir","Gelendost","Gönen","Keçiborlu","Merkez","Senirkent","Sütçüler","Uluborlu","Yalvaç","Yenişarbademli","Şarkikaraağaç"],"Mersin":["Akdeniz","Anamur","Aydıncık","Bozyazı","Erdemli","Gülnar","Mezitli","Mut","Silifke","Tarsus","Toroslar","Yenişehir","Çamlıyayla"],"İstanbul":["Adalar","Arnavutköy","Ataşehir","Avcılar","Bahçelievler","Bakırköy","Bayrampaşa","Bağcılar","Başakşehir","Beykoz","Beylikdüzü","Beyoğlu","Beşiktaş","Büyükçekmece","Esenler","Esenyurt","Eyüpsultan","Fatih","Gaziosmanpaşa","Güngören","Kadıköy","Kartal","Kağıthane","Küçükçekmece","Maltepe","Pendik","Sancaktepe","Sarıyer","Silivri","Sultanbeyli","Sultangazi","Tuzla","Zeytinburnu","Çatalca","Çekmeköy","Ümraniye","Üsküdar","Şile","Şişli"],"İzmir":["Aliağa","Balçova","Bayraklı","Bayındır","Bergama","Beydağ","Bornova","Buca","Dikili","Foça","Gaziemir","Güzelbahçe","Karabağlar","Karaburun","Karşıyaka","Kemalpaşa","Kiraz","Konak","Kınık","Menderes","Menemen","Narlıdere","Seferihisar","Selçuk","Tire","Torbalı","Urla","Çeşme","Çiğli","Ödemiş"],"Kars":["Akyaka","Arpaçay","Digor","Kağızman","Merkez","Sarıkamış","Selim","Susuz"],"Kastamonu":["Abana","Araç","Azdavay","Ağlı","Bozkurt","Cide","Daday","Devrekani","Doğanyurt","Hanönü","Küre","Merkez","Pınarbaşı","Seydiler","Taşköprü","Tosya","Çatalzeytin","İhsangazi","İnebolu","Şenpazar"],"Kayseri":["Akkışla","Bünyan","Develi","Felahiye","Hacılar","Kocasinan","Melikgazi","Pınarbaşı","Sarıoğlan","Sarız","Talas","Tomarza","Yahyalı","Yeşilhisar","Özvatan","İncesu"],"Kırklareli":["Babaeski","Demirköy","Kofçaz","Lüleburgaz","Merkez","Pehlivanköy","Pınarhisar","Vize"],"Kırşehir":["Akpınar","Akçakent","Boztepe","Kaman","Merkez","Mucur","Çiçekdağı"],"Kocaeli":["Başiskele","Darıca","Derince","Dilovası","Gebze","Gölcük","Kandıra","Karamürsel","Kartepe","Körfez","Çayırova","İzmit"],"Konya":["Ahırlı","Akören","Akşehir","Altınekin","Beyşehir","Bozkır","Cihanbeyli","Derbent","Derebucak","Doğanhisar","Emirgazi","Ereğli","Güneysınır","Hadim","Halkapınar","Hüyük","Ilgın","Kadınhanı","Karapınar","Karatay","Kulu","Meram","Sarayönü","Selçuklu","Seydişehir","Taşkent","Tuzlukçu","Yalıhüyük","Yunak","Çeltik","Çumra"],"Kütahya":["Altıntaş","Aslanapa","Domaniç","Dumlupınar","Emet","Gediz","Hisarcık","Merkez","Pazarlar","Simav","Tavşanlı","Çavdarhisar","Şaphane"],"Malatya":["Akçadağ","Arapgir","Arguvan","Battalgazi","Darende","Doğanyol","Doğanşehir","Hekimhan","Kale","Kuluncak","Pütürge","Yazıhan","Yeşilyurt"],"Manisa":["Ahmetli","Akhisar","Alaşehir","Demirci","Gölmarmara","Gördes","Kula","Köprübaşı","Kırkağaç","Salihli","Saruhanlı","Sarıgöl","Selendi","Soma","Turgutlu","Yunusemre","Şehzadeler"],"Kahramanmaraş":["Afşin","Andırın","Dulkadiroğlu","Ekinözü","Elbistan","Göksun","Nurhak","Onikişubat","Pazarcık","Türkoğlu","Çağlayancerit"],"Mardin":["Artuklu","Dargeçit","Derik","Kızıltepe","Mazıdağı","Midyat","Nusaybin","Savur","Yeşilli","Ömerli"],"Muğla":["Bodrum","Dalaman","Datça","Fethiye","Kavaklıdere","Köyceğiz","Marmaris","Menteşe","Milas","Ortaca","Seydikemer","Ula","Yatağan"],"Muş":["Bulanık","Hasköy","Korkut","Malazgirt","Merkez","Varto"],"Nevşehir":["Acıgöl","Avanos","Derinkuyu","Gülşehir","Hacıbektaş","Kozaklı","Merkez","Ürgüp"],"Niğde":["Altunhisar","Bor","Merkez","Ulukışla","Çamardı","Çiftlik"],"Ordu":["Akkuş","Altınordu","Aybastı","Fatsa","Gölköy","Gülyalı","Gürgentepe","Kabadüz","Kabataş","Korgan","Kumru","Mesudiye","Perşembe","Ulubey","Çamaş","Çatalpınar","Çaybaşı","Ünye","İkizce"],"Rize":["Ardeşen","Derepazarı","Fındıklı","Güneysu","Hemşin","Kalkandere","Merkez","Pazar","Çamlıhemşin","Çayeli","İkizdere","İyidere"],"Sakarya":["Adapazarı","Akyazı","Arifiye","Erenler","Ferizli","Geyve","Hendek","Karapürçek","Karasu","Kaynarca","Kocaali","Pamukova","Sapanca","Serdivan","Söğütlü","Taraklı"],"Samsun":["19 Mayıs","Alaçam","Asarcık","Atakum","Ayvacık","Bafra","Canik","Havza","Kavak","Ladik","Salıpazarı","Tekkeköy","Terme","Vezirköprü","Yakakent","Çarşamba","İlkadım"],"Siirt":["Baykan","Eruh","Kurtalan","Merkez","Pervari","Tillo","Şirvan"],"Sinop":["Ayancık","Boyabat","Dikmen","Durağan","Erfelek","Gerze","Merkez","Saraydüzü","Türkeli"],"Sivas":["Akıncılar","Altınyayla","Divriği","Doğanşar","Gemerek","Gölova","Gürün","Hafik","Kangal","Koyulhisar","Merkez","Suşehri","Ulaş","Yıldızeli","Zara","İmranlı","Şarkışla"],"Tekirdağ":["Ergene","Hayrabolu","Kapaklı","Malkara","Marmaraereğlisi","Muratlı","Saray","Süleymanpaşa","Çerkezköy","Çorlu","Şarköy"],"Tokat":["Almus","Artova","Başçiftlik","Erbaa","Merkez","Niksar","Pazar","Reşadiye","Sulusaray","Turhal","Yeşilyurt","Zile"],"Trabzon":["Akçaabat","Araklı","Arsin","Beşikdüzü","Dernekpazarı","Düzköy","Hayrat","Köprübaşı","Maçka","Of","Ortahisar","Sürmene","Tonya","Vakfıkebir","Yomra","Çarşıbaşı","Çaykara","Şalpazarı"],"Tunceli":["Hozat","Mazgirt","Merkez","Nazımiye","Ovacık","Pertek","Pülümür","Çemişgezek"],"Şanlıurfa":["Akçakale","Birecik","Bozova","Ceylanpınar","Eyyübiye","Halfeti","Haliliye","Harran","Hilvan","Karaköprü","Siverek","Suruç","Viranşehir"],"Uşak":["Banaz","Eşme","Karahallı","Merkez","Sivaslı","Ulubey"],"Van":["Bahçesaray","Başkale","Edremit","Erciş","Gevaş","Gürpınar","Muradiye","Saray","Tuşba","Çaldıran","Çatak","Özalp","İpekyolu"],"Yozgat":["Akdağmadeni","Aydıncık","Boğazlıyan","Kadışehri","Merkez","Saraykent","Sarıkaya","Sorgun","Yenifakılı","Yerköy","Çandır","Çayıralan","Çekerek","Şefaatli"],"Zonguldak":["Alaplı","Devrek","Ereğli","Gökçebey","Kilimli","Kozlu","Merkez","Çaycuma"],"Aksaray":["Ağaçören","Eskil","Gülağaç","Güzelyurt","Merkez","Ortaköy","Sarıyahşi","Sultanhanı"],"Bayburt":["Aydıntepe","Demirözü","Merkez"],"Karaman":["Ayrancı","Başyayla","Ermenek","Kazımkarabekir","Merkez","Sarıveliler"],"Kırıkkale":["Bahşili","Balışeyh","Delice","Karakeçili","Keskin","Merkez","Sulakyurt","Yahşihan","Çelebi"],"Batman":["Beşiri","Gercüş","Hasankeyf","Kozluk","Merkez","Sason"],"Şırnak":["Beytüşşebap","Cizre","Güçlükonak","Merkez","Silopi","Uludere","İdil"],"Bartın":["Amasra","Kurucaşile","Merkez","Ulus"],"Ardahan":["Damal","Göle","Hanak","Merkez","Posof","Çıldır"],"Iğdır":["Aralık","Karakoyunlu","Merkez","Tuzluca"],"Yalova":["Altınova","Armutlu","Merkez","Termal","Çiftlikköy","Çınarcık"],"Karabük":["Eflani","Eskipazar","Merkez","Ovacık","Safranbolu","Yenice"],"Kilis":["Elbeyli","Merkez","Musabeyli","Polateli"],"Osmaniye":["Bahçe","Düziçi","Hasanbeyli","Kadirli","Merkez","Sumbas","Toprakkale"],"Düzce":["Akçakoca","Cumayeri","Gölyaka","Gümüşova","Kaynaşlı","Merkez","Yığılca","Çilimli"]};
+
+function getIlceOptions(il){
+  const base = IL_ILCE_DATA[il] || [];
+  const custom = addressMaster.ilceByIl[il] || [];
+  const set = new Set(base);
+  custom.forEach(c => set.add(c));
+  return Array.from(set).sort((a,b) => a.localeCompare(b, 'tr'));
+}
+
+function uid(){ return 'c' + Date.now() + Math.random().toString(36).slice(2,7); }
+
+function showToast(message, tone){
+  const el = document.createElement('div');
+  el.textContent = message;
+  const bg = tone === 'error' ? '#F7E7DD' : '#E4F0EC';
+  const fg = tone === 'error' ? '#7E3F22' : '#1E4A42';
+  el.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${bg};color:${fg};padding:10px 18px;border-radius:20px;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.15);z-index:100;`;
+  document.body.appendChild(el);
+  setTimeout(()=>{ el.style.transition = 'opacity .3s'; el.style.opacity = '0'; setTimeout(()=>el.remove(), 300); }, 2200);
+}
+
+async function loadProfile(){
+  try{
+    const r = await adapterGet('profile', false);
+    if(r && r.value) profile = JSON.parse(r.value);
+  }catch(e){ /* no profile saved yet */ }
+  try{
+    const rl = await adapterGet('profileLogo', false);
+    if(rl && rl.value) profile.logo = rl.value;
+  }catch(e){ /* no logo saved yet */ }
+  applyProfileToHeader();
+}
+async function saveProfileCore(){
+  const core = {
+    companyName: profile.companyName || '',
+    agentName: profile.agentName || '',
+    phone: profile.phone || '',
+    email: profile.email || '',
+    address: profile.address || ''
+  };
+  const result = await adapterSet('profile', JSON.stringify(core), false);
+  if(!result) throw new Error('storage.set returned null for profile');
+}
+async function saveProfileLogo(dataUrl){
+  if(dataUrl){
+    const result = await adapterSet('profileLogo', dataUrl, false);
+    if(!result) throw new Error('storage.set returned null for profileLogo');
+  }else{
+    try{ await adapterDelete('profileLogo', false); }catch(e){ /* nothing to delete */ }
+  }
+}
+function applyProfileToHeader(){
+  document.getElementById('companyNameEl').textContent = profile.companyName || 'Emlak CRM';
+  const agentBits = [profile.agentName, profile.phone].filter(Boolean).join(' · ');
+  document.getElementById('agentLineEl').textContent = agentBits || 'Alıcı ve satıcı müşterilerinizi tek yerden yönetin';
+  const logoImg = document.getElementById('logoImg');
+  if(profile.logo){
+    logoImg.src = profile.logo;
+    logoImg.style.display = 'block';
+  }else{
+    logoImg.style.display = 'none';
+  }
+}
+
+async function loadAll(){
+  try{
+    const res = await adapterList('customer:', false);
+    if(!res || !res.keys || res.keys.length === 0){ customers = []; render(); return; }
+    const items = [];
+    for(const k of res.keys){
+      try{
+        const r = await adapterGet(k, false);
+        if(r && r.value) items.push(JSON.parse(r.value));
+      }catch(e){}
+    }
+    customers = items.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
+  }catch(e){
+    customers = [];
+  }
+  render();
+}
+
+async function saveCustomer(c){
+  const result = await adapterSet('customer:' + c.id, JSON.stringify(c), false);
+  if(!result) throw new Error('storage.set returned null for customer:' + c.id);
+}
+async function deleteCustomer(id){
+  await adapterDelete('customer:' + id, false);
+}
+
+function fmtMoney(n){
+  if(n === null || n === undefined || n === '') return '-';
+  const num = Number(n);
+  if(isNaN(num)) return '-';
+  return num.toLocaleString('tr-TR') + ' ₺';
+}
+
+function customerSearchHaystack(c){
+  const parts = [
+    c.name, c.phone, c.email,
+    c.il, c.ilce, c.mahalle,
+    (c.mahalleler||[]).join(' '),
+    c.propertyType,
+    c.status,
+    c.notes,
+    c.price != null ? String(c.price) : '',
+    c.price != null ? Number(c.price).toLocaleString('tr-TR') : '',
+    c.type==='alici' ? (c.dealType==='kiralik' ? 'kiralık kiralık arıyor' : 'satılık satılık arıyor') : '',
+    c.type==='satici' ? (c.portfolioStatus==='listed' ? 'portföye alındı' : 'görüşme aşamasında') : '',
+    c.portfolioLink,
+    Object.values(c.features || {}).join(' '),
+    (c.listings||[]).map(l => [l.title, l.url, l.status].filter(Boolean).join(' ')).join(' ')
+  ];
+  return parts.filter(Boolean).join(' ').toLowerCase();
+}
+
+function statusClass(s){
+  const map = {'Yeni':'st-Yeni','İletişimde':'st-Iletisimde','Görüşülüyor':'st-Gorusuluyor','Teklif Aşamasında':'st-Teklif','Tamamlandı':'st-Tamamlandi','Pasif':'st-Pasif'};
+  return map[s] || 'st-Yeni';
+}
+
+function render(){
+  const buyers = customers.filter(c=>c.type==='alici');
+  const sellers = customers.filter(c=>c.type==='satici');
+  document.getElementById('countBuyer').textContent = buyers.length;
+  document.getElementById('countSeller').textContent = sellers.length;
+
+  const activeCount = customers.filter(c=>c.status!=='Pasif' && c.status!=='Tamamlandı').length;
+  const doneThisMonth = customers.filter(c=>{
+    if(c.status !== 'Tamamlandı') return false;
+    const d = new Date(c.createdAt||0);
+    const now = new Date();
+    return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+  }).length;
+
+  const sellersListed = sellers.filter(c=>c.portfolioStatus==='listed').length;
+  const sellersNego = sellers.length - sellersListed;
+  const buyersRent = buyers.filter(c=>c.dealType==='kiralik').length;
+  const buyersSale = buyers.length - buyersRent;
+
+  document.getElementById('stats').innerHTML = activeTab==='satici' ? `
+    <div class="stat"><div class="num">${sellers.length}</div><div class="lbl">Toplam satıcı</div></div>
+    <div class="stat"><div class="num">${sellersListed}</div><div class="lbl">Portföye alındı</div></div>
+    <div class="stat"><div class="num">${sellersNego}</div><div class="lbl">Görüşme aşamasında</div></div>
+    <div class="stat"><div class="num">${activeCount}</div><div class="lbl">Aktif süreç</div></div>
+  ` : `
+    <div class="stat"><div class="num">${buyers.length}</div><div class="lbl">Toplam alıcı</div></div>
+    <div class="stat"><div class="num">${buyersSale}</div><div class="lbl">Satılık arayan</div></div>
+    <div class="stat"><div class="num">${buyersRent}</div><div class="lbl">Kiralık arayan</div></div>
+    <div class="stat"><div class="num">${activeCount}</div><div class="lbl">Aktif süreç</div></div>
+  `;
+
+  document.getElementById('tabBuyer').className = 'buyer' + (activeTab==='alici' ? ' active' : '');
+  document.getElementById('tabSeller').className = 'seller' + (activeTab==='satici' ? ' active' : '');
+
+  const dealTypeFilterEl = document.getElementById('dealTypeFilter');
+  dealTypeFilterEl.style.display = activeTab==='alici' ? '' : 'none';
+
+  const search = document.getElementById('search').value.trim().toLowerCase();
+  const statusF = document.getElementById('statusFilter').value;
+  const dealF = activeTab==='alici' ? dealTypeFilterEl.value : '';
+
+  let list = customers.filter(c=>c.type===activeTab);
+  if(search){
+    list = list.filter(c => customerSearchHaystack(c).includes(search));
+  }
+  if(statusF){ list = list.filter(c=>c.status===statusF); }
+  if(dealF){ list = list.filter(c => (c.dealType||'satilik') === dealF); }
+
+  const listEl = document.getElementById('list');
+  if(list.length === 0){
+    listEl.innerHTML = `<div class="empty"><div class="tag-icon">${activeTab==='alici'?'🔑':'🏷️'}</div>
+      <div>${activeTab==='alici' ? 'Henüz alıcı müşteri yok.' : 'Henüz satıcı müşteri yok.'}</div>
+      <div style="font-size:12px;margin-top:4px;">"Yeni Müşteri" ile ekleyin.</div></div>`;
+    return;
+  }
+
+  listEl.innerHTML = list.map(c => `
+    <div class="customer-card" data-id="${c.id}">
+      <div class="pin ${c.type==='alici'?'buyer':'seller'}"></div>
+      <div class="row1">
+        <div>
+          <p class="name">${escapeHtml(c.name)}</p>
+          <div class="sub">${escapeHtml(c.phone||'')}${c.email ? ' · ' + escapeHtml(c.email) : ''}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span class="badge ${statusClass(c.status)}">${escapeHtml(c.status)}</span>
+          ${c.type==='alici' ? `<span class="badge ${c.dealType==='kiralik' ? 'st-Iletisimde' : 'st-Tamamlandi'}">${c.dealType==='kiralik' ? 'Kiralık arıyor' : 'Satılık arıyor'}</span>` : ''}
+        </div>
+      </div>
+      <div class="row2">
+        <span>📍 ${escapeHtml(locationSummary(c))}</span>
+        <span>🏠 ${escapeHtml(c.propertyType||'-')}${featuresSummary(c) ? ' · ' + escapeHtml(featuresSummary(c)) : ''}</span>
+        <span class="price-tag">${c.type==='alici' ? (c.dealType==='kiralik' ? 'Kira bütçesi: ' : 'Bütçe: ') : 'Fiyat: '}${fmtMoney(c.price)}</span>
+      </div>
+      ${c.notes ? `<div class="note-preview">"${escapeHtml(c.notes.slice(0,90))}${c.notes.length>90?'...':''}"</div>` : ''}
+      ${c.type==='alici' && c.listings && c.listings.length ? `<div class="listing-badge">🔗 ${c.listings.length} portföy sunuldu</div>` : ''}
+      ${c.type==='satici' ? (c.portfolioStatus==='listed'
+          ? `<div class="portfolio-badge listed">📁 Portföye alındı${c.portfolioLink ? ` · <a href="${escapeHtml(c.portfolioLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;">ilanı gör</a>` : ''}</div>`
+          : `<div class="portfolio-badge nego">💬 Görüşme aşamasında</div>`) : ''}
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('.customer-card').forEach(el=>{
+    el.addEventListener('click', ()=> openModal(el.getAttribute('data-id')));
+  });
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+document.getElementById('tabBuyer').addEventListener('click', ()=>{ activeTab='alici'; render(); });
+document.getElementById('tabSeller').addEventListener('click', ()=>{ activeTab='satici'; render(); });
+document.getElementById('search').addEventListener('input', (e)=>{
+  const el = e.target;
+  const digitsOnly = el.value.replace(/\./g, '');
+  if(digitsOnly && /^\d+$/.test(digitsOnly)){
+    const formatted = Number(digitsOnly).toLocaleString('tr-TR');
+    if(formatted !== el.value) el.value = formatted;
+  }
+  render();
+});
+document.getElementById('statusFilter').addEventListener('change', render);
+document.getElementById('dealTypeFilter').addEventListener('change', render);
+document.getElementById('addBtn').addEventListener('click', ()=> openModal(null));
+document.getElementById('profileBtn').addEventListener('click', ()=> openProfileModal());
+document.getElementById('reportBtn').addEventListener('click', ()=> openReportModal());
+
+function openProfileModal(){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>Firma bilgilerim</h2>
+      <p class="modal-sub">Bu bilgiler size ait iletişim ve firma kaydı olarak saklanır.</p>
+      <div class="logo-upload">
+        <div class="logo-preview" id="logoPreview">${profile.logo ? `<img src="${profile.logo}">` : 'Logo'}</div>
+        <div id="logoUploadControls">
+          <input type="file" id="f_logoFile" accept="image/*">
+          <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">PNG veya JPG, küçük boyutlu bir dosya seçin.</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Firma adı</label>
+        <input type="text" id="f_companyName" value="${escapeHtml(profile.companyName||'')}" placeholder="Örn. Yılmaz Gayrimenkul">
+      </div>
+      <div class="form-group">
+        <label>Ad soyad</label>
+        <input type="text" id="f_agentName" value="${escapeHtml(profile.agentName||'')}" placeholder="Örn. Ahmet Yılmaz">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Telefon</label>
+          <input type="text" id="f_pPhone" value="${escapeHtml(profile.phone||'')}" placeholder="0532 000 00 00">
+        </div>
+        <div class="form-group">
+          <label>E-posta</label>
+          <input type="text" id="f_pEmail" value="${escapeHtml(profile.email||'')}" placeholder="ornek@mail.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Adres</label>
+        <textarea id="f_pAddress" placeholder="Ofis adresi">${escapeHtml(profile.address||'')}</textarea>
+      </div>
+      <div class="modal-actions">
+        <div class="left"></div>
+        <div class="left">
+          <button class="btn-secondary" id="pCancelBtn">Vazgeç</button>
+          <button class="btn-primary" id="pSaveBtn">Kaydet</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  let pendingLogo = profile.logo || '';
+  const logoStatusId = 'logoUploadStatus';
+  overlay.querySelector('#logoUploadControls').insertAdjacentHTML('beforeend', `<div id="${logoStatusId}" style="font-size:12px;color:var(--ink-soft);margin-top:4px;"></div>`);
+  const logoStatusEl = overlay.querySelector('#'+logoStatusId);
+
+  overlay.querySelector('#f_logoFile').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    logoStatusEl.textContent = 'Küçültülüyor...';
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const maxDim = 160;
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+        else if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+        else if(w <= maxDim && h <= maxDim){ /* already small, keep as-is size */ }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img, 0, 0, w, h);
+        let quality = 0.8;
+        let result = canvas.toDataURL('image/jpeg', quality);
+        while(result.length > 300000 && quality > 0.3){
+          quality -= 0.15;
+          result = canvas.toDataURL('image/jpeg', quality);
+        }
+        if(result.length > 300000){
+          logoStatusEl.textContent = 'Bu görsel hâlâ çok büyük, lütfen daha küçük bir görsel seçin.';
+          return;
+        }
+        pendingLogo = result;
+        overlay.querySelector('#logoPreview').innerHTML = `<img src="${pendingLogo}">`;
+        logoStatusEl.textContent = 'Görsel küçültüldü, kaydedebilirsiniz.';
+      };
+      img.onerror = ()=>{ logoStatusEl.textContent = 'Bu görsel okunamadı (format desteklenmiyor olabilir), başka bir dosya deneyin.'; };
+      img.src = reader.result;
+    };
+    reader.onerror = ()=>{ logoStatusEl.textContent = 'Dosya okunamadı, tekrar deneyin.'; };
+    reader.readAsDataURL(file);
+  });
+
+  overlay.querySelector('#pCancelBtn').addEventListener('click', ()=> overlay.remove());
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) overlay.remove(); });
+
+  overlay.querySelector('#pSaveBtn').addEventListener('click', async ()=>{
+    profile.companyName = overlay.querySelector('#f_companyName').value.trim();
+    profile.agentName = overlay.querySelector('#f_agentName').value.trim();
+    profile.phone = overlay.querySelector('#f_pPhone').value.trim();
+    profile.email = overlay.querySelector('#f_pEmail').value.trim();
+    profile.address = overlay.querySelector('#f_pAddress').value.trim();
+
+    try{
+      await saveProfileCore();
+    }catch(e){
+      console.error('Profile core save error:', e);
+      alert('Firma bilgileri kaydedilemedi. Lütfen tekrar deneyin; sorun sürerse sayfayı yenileyip deneyin.');
+      return;
+    }
+
+    let logoWarning = '';
+    try{
+      await saveProfileLogo(pendingLogo);
+      profile.logo = pendingLogo;
+    }catch(e){
+      console.error('Logo save error:', e);
+      logoWarning = 'Diğer bilgileriniz kaydedildi, ancak logo kaydedilemedi. Daha küçük bir görsel deneyin.';
+    }
+
+    applyProfileToHeader();
+    overlay.remove();
+    if(logoWarning){
+      showToast(logoWarning, 'error');
+    }else{
+      showToast('Firma bilgileri kaydedildi.');
+    }
+  });
+}
+
+const REPORT_STATUSES = ['Yeni','İletişimde','Görüşülüyor','Teklif Aşamasında','Tamamlandı','Pasif'];
+
+function openReportModal(){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>Rapor al</h2>
+      <p class="modal-sub">Filtreleri seçip listele deyin.</p>
+      <div class="report-filters">
+        <div class="type-toggle">
+          <button type="button" class="rtype sel-buyer" data-val="hepsi" style="border-color:var(--ink);background:var(--paper);color:var(--ink);">Tümü</button>
+          <button type="button" class="rtype" data-val="alici">Alıcılar</button>
+          <button type="button" class="rtype" data-val="satici">Satıcılar</button>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.03em;">Durum (boş bırakılırsa tümü)</label>
+          <div class="checkbox-grid" id="statusChecks">
+            ${REPORT_STATUSES.map(s=>`<label><input type="checkbox" value="${s}"> ${s}</label>`).join('')}
+          </div>
+        </div>
+        <div id="dealChecksWrap" style="display:none;">
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.03em;">İşlem türü (boş bırakılırsa tümü)</label>
+          <div class="checkbox-grid" id="dealChecks">
+            <label><input type="checkbox" value="satilik"> Satılık arıyor</label>
+            <label><input type="checkbox" value="kiralik"> Kiralık arıyor</label>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>İl</label>
+            <select id="r_il">
+              <option value="">Tüm iller</option>
+              ${IL_LIST.map(i=>`<option value="${i}">${i}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>İlçe</label>
+            <select id="r_ilce" disabled>
+              <option value="">Tüm ilçeler</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-primary" id="runReportBtn" style="align-self:flex-start;">Listele</button>
+      </div>
+      <div class="report-results" id="reportResults" style="display:none;"></div>
+      <div class="modal-actions">
+        <div class="left"></div>
+        <div class="left">
+          <button class="btn-secondary" id="rCloseBtn">Kapat</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  let rType = 'hepsi';
+  const typeBtns = overlay.querySelectorAll('.rtype');
+  const dealChecksWrap = overlay.querySelector('#dealChecksWrap');
+  typeBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      rType = btn.getAttribute('data-val');
+      typeBtns.forEach(b=> b.style.cssText = 'border-color:var(--line-strong);background:#fff;color:var(--ink-soft);');
+      btn.style.cssText = 'border-color:var(--ink);background:var(--paper);color:var(--ink);';
+      dealChecksWrap.style.display = rType==='alici' ? 'block' : 'none';
+    });
+  });
+
+  overlay.querySelector('#rCloseBtn').addEventListener('click', ()=> overlay.remove());
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) overlay.remove(); });
+
+  const rIlSelect = overlay.querySelector('#r_il');
+  const rIlceSelect = overlay.querySelector('#r_ilce');
+  rIlSelect.addEventListener('change', ()=>{
+    const il = rIlSelect.value;
+    if(!il){
+      rIlceSelect.innerHTML = '<option value="">Tüm ilçeler</option>';
+      rIlceSelect.disabled = true;
+      return;
+    }
+    const list = getIlceOptions(il);
+    rIlceSelect.innerHTML = '<option value="">Tüm ilçeler</option>' +
+      list.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
+    rIlceSelect.disabled = false;
+  });
+
+  overlay.querySelector('#runReportBtn').addEventListener('click', ()=>{
+    const checkedStatuses = Array.from(overlay.querySelectorAll('#statusChecks input:checked')).map(i=>i.value);
+    const checkedDeals = Array.from(overlay.querySelectorAll('#dealChecks input:checked')).map(i=>i.value);
+    const ilF = rIlSelect.value;
+    const ilceF = rIlceSelect.value;
+
+    let results = customers.filter(c=>{
+      if(rType !== 'hepsi' && c.type !== rType) return false;
+      if(checkedStatuses.length && !checkedStatuses.includes(c.status)) return false;
+      if(rType==='alici' && checkedDeals.length && !checkedDeals.includes(c.dealType||'satilik')) return false;
+      if(ilF && c.il !== ilF) return false;
+      if(ilceF && c.ilce !== ilceF) return false;
+      return true;
+    });
+
+    const resultsEl = overlay.querySelector('#reportResults');
+    resultsEl.style.display = 'block';
+    if(results.length === 0){
+      resultsEl.innerHTML = `<div class="rcount">Kriterlere uyan müşteri bulunamadı.</div>`;
+      return;
+    }
+    resultsEl.innerHTML = `
+      <div class="rcount">${results.length} müşteri bulundu</div>
+      ${results.map(c => `
+        <div class="report-row">
+          <span class="rname">${escapeHtml(c.name)} <span class="rmeta">(${c.type==='alici'?(c.dealType==='kiralik'?'Alıcı · Kiralık':'Alıcı · Satılık'):'Satıcı'})</span></span>
+          <span class="rmeta">${escapeHtml(locationSummary(c))} · ${escapeHtml(c.status)}</span>
+        </div>
+      `).join('')}
+      <div class="report-actions">
+        <button class="btn-secondary" id="copyReportBtn">Listeyi kopyala</button>
+        <button class="btn-secondary" id="printReportBtn">Yazdır</button>
+      </div>
+    `;
+
+    resultsEl.querySelector('#copyReportBtn').addEventListener('click', ()=>{
+      const text = results.map(c => `${c.name} (${c.type==='alici'?(c.dealType==='kiralik'?'Alıcı-Kiralık':'Alıcı-Satılık'):'Satıcı'}) — ${c.phone||'-'} — ${locationSummary(c)} — ${c.status} — ${fmtMoney(c.price)}`).join('\n');
+      navigator.clipboard.writeText(text).then(()=>{
+        alert('Liste panoya kopyalandı.');
+      }).catch(()=>{
+        alert('Kopyalama başarısız oldu, tarayıcı izni gerekebilir.');
+      });
+    });
+
+    resultsEl.querySelector('#printReportBtn').addEventListener('click', ()=>{
+      const win = window.open('', '_blank');
+      if(!win){ alert('Yazdırma penceresi açılamadı, tarayıcı ayarlarınızı kontrol edin.'); return; }
+      const title = (profile.companyName || 'Emlak CRM') + ' — Müşteri raporu';
+      const todayStr = new Date().toLocaleDateString('tr-TR', {day:'numeric', month:'long', year:'numeric'});
+
+      const contactBits = [profile.phone, profile.email, profile.address].filter(Boolean);
+      const bannerHtml = `
+        <div class="banner">
+          ${profile.logo ? `<img src="${profile.logo}" class="banner-logo">` : ''}
+          <div class="banner-text">
+            <div class="banner-company">${escapeHtml(profile.companyName || 'Emlak CRM')}</div>
+            ${profile.agentName ? `<div class="banner-agent">${escapeHtml(profile.agentName)}</div>` : ''}
+            ${contactBits.length ? `<div class="banner-contact">${contactBits.map(escapeHtml).join(' · ')}</div>` : ''}
+          </div>
+        </div>
+      `;
+
+      win.document.write(`
+        <html><head><title>${title}</title>
+        <style>
+          body{font-family:Arial,sans-serif;padding:0;color:#22303A;margin:0;}
+          .banner{
+            display:flex;align-items:center;gap:16px;
+            padding:20px 24px;border-bottom:3px solid #AD8148;
+            background:#F6F3EC;
+          }
+          .banner-logo{width:56px;height:56px;border-radius:8px;object-fit:cover;}
+          .banner-company{font-size:19px;font-weight:700;}
+          .banner-agent{font-size:13px;color:#5B6772;margin-top:2px;}
+          .banner-contact{font-size:12px;color:#5B6772;margin-top:2px;}
+          .content{padding:24px;}
+          h1{font-size:17px;margin:0 0 2px;}
+          p.meta{color:#5B6772;font-size:13px;margin-top:0;}
+          table{width:100%;border-collapse:collapse;margin-top:16px;}
+          th,td{text-align:left;padding:8px;border-bottom:1px solid #DED8C8;font-size:13px;}
+          th{color:#5B6772;text-transform:uppercase;font-size:11px;}
+          @media print{ .banner{ -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+        </style></head><body>
+        ${bannerHtml}
+        <div class="content">
+          <h1>Müşteri raporu</h1>
+          <p class="meta">${todayStr} · Toplam ${results.length} müşteri</p>
+          <table>
+            <tr><th>Ad soyad</th><th>Tür</th><th>Telefon</th><th>Konum</th><th>Durum</th><th>${'Tutar'}</th></tr>
+            ${results.map(c=>`<tr><td>${escapeHtml(c.name)}</td><td>${c.type==='alici'?(c.dealType==='kiralik'?'Alıcı (Kiralık)':'Alıcı (Satılık)'):'Satıcı'}</td><td>${escapeHtml(c.phone||'-')}</td><td>${escapeHtml(locationSummary(c))}</td><td>${escapeHtml(c.status)}</td><td>${fmtMoney(c.price)}</td></tr>`).join('')}
+          </table>
+        </div>
+        </body></html>
+      `);
+      win.document.close();
+      win.focus();
+      win.print();
+    });
+  });
+}
+
+loadProfile();
+loadAddressMaster();
+
+function openModal(id){
+  editingId = id;
+  const c = id ? customers.find(x=>x.id===id) : null;
+  const type = c ? c.type : activeTab;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>${c ? 'Müşteriyi düzenle' : 'Yeni müşteri'}</h2>
+      <p class="modal-sub">${c ? escapeHtml(c.name) : 'Alıcı veya satıcı müşteri bilgilerini girin.'}</p>
+      <div class="type-toggle">
+        <button type="button" id="typeBuyer" class="${type==='alici'?'sel-buyer':''}">Alıcı</button>
+        <button type="button" id="typeSeller" class="${type==='satici'?'sel-seller':''}">Satıcı</button>
+      </div>
+      <div class="form-group" id="dealTypeGroup" style="display:${type==='alici'?'block':'none'};">
+        <label>Ne arıyor?</label>
+        <div class="type-toggle">
+          <button type="button" id="dealSale" class="${(!c || c.dealType!=='kiralik') ? 'sel-buyer' : ''}">Satılık arıyor</button>
+          <button type="button" id="dealRent" class="${(c && c.dealType==='kiralik') ? 'sel-buyer' : ''}">Kiralık arıyor</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Ad soyad</label>
+        <input type="text" id="f_name" value="${c ? escapeHtml(c.name) : ''}" placeholder="Örn. Ayşe Yılmaz">
+        <div class="err" id="err_name">Ad soyad girin.</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Telefon</label>
+          <input type="text" id="f_phone" value="${c ? escapeHtml(c.phone||'') : ''}" placeholder="0532 000 00 00">
+        </div>
+        <div class="form-group">
+          <label>E-posta</label>
+          <input type="text" id="f_email" value="${c ? escapeHtml(c.email||'') : ''}" placeholder="ornek@mail.com">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Emlak türü</label>
+          <select id="f_ptype">
+            ${PROPERTY_TYPES.map(t=>`<option ${c && c.propertyType===t?'selected':''}>${t}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>İl</label>
+          <select id="f_il">
+            <option value="">İl seçin</option>
+            ${IL_LIST.map(i=>`<option ${c && c.il===i?'selected':''}>${i}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>İlçe</label>
+          <select id="f_ilce_select" ${c && c.il ? '' : 'disabled'}>
+            <option value="">İlçe seçin</option>
+          </select>
+          <div id="ilceNewWrap" style="display:none;margin-top:8px;">
+            <input type="text" id="f_ilceNew" placeholder="Yeni ilçe adı">
+            <button type="button" class="btn-secondary" id="ilceNewAdd" style="margin-top:6px;width:100%;">Ekle</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" id="mahalleSingleGroup" style="display:${type==='alici'?'none':'block'};">
+        <label>Mahalle</label>
+        <select id="f_mahalle_select" ${c && c.il && c.ilce ? '' : 'disabled'}>
+          <option value="">Mahalle seçin</option>
+        </select>
+        <div id="mahalleNewWrap" style="display:none;margin-top:8px;">
+          <input type="text" id="f_mahalleNew" placeholder="Yeni mahalle adı">
+          <button type="button" class="btn-secondary" id="mahalleNewAdd" style="margin-top:6px;width:100%;">Ekle</button>
+        </div>
+      </div>
+      <div class="form-group" id="mahalleMultiGroup" style="display:${type==='alici'?'block':'none'};">
+        <label>Mahalle(ler) — istenen bölgeler</label>
+        <div class="chips" id="mahalleChips"></div>
+        <select id="f_mahalleAdd_select" ${c && c.il && c.ilce ? '' : 'disabled'}>
+          <option value="">Mahalle ekle...</option>
+        </select>
+        <div id="mahalleMultiNewWrap" style="display:none;margin-top:8px;">
+          <input type="text" id="f_mahalleMultiNew" placeholder="Yeni mahalle adı">
+          <button type="button" class="btn-secondary" id="mahalleMultiNewAdd" style="margin-top:6px;width:100%;">Ekle</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label id="featuresLabel">İstenen özellikler</label>
+        <div class="feature-fields" id="featureFields"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label id="priceLabel">${type==='alici' ? (c && c.dealType==='kiralik' ? 'Aylık kira bütçesi (₺)' : 'Bütçe (₺)') : 'Satış fiyatı (₺)'}</label>
+          <input type="text" id="f_price" inputmode="numeric" value="${c && c.price ? Number(c.price).toLocaleString('tr-TR') : ''}" placeholder="Örn. 3.500.000">
+        </div>
+        <div class="form-group">
+          <label>Durum</label>
+          <select id="f_status">
+            ${['Yeni','İletişimde','Görüşülüyor','Teklif Aşamasında','Tamamlandı','Pasif'].map(s=>`<option ${c && c.status===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notlar</label>
+        <textarea id="f_notes" placeholder="Görüşme notları, tercihler...">${c ? escapeHtml(c.notes||'') : ''}</textarea>
+      </div>
+      <div class="listings-section" id="listingsSection" style="display:${type==='alici'?'block':'none'};">
+        <h3>Sunulan portföyler</h3>
+        <p class="hint">Bu alıcıya gösterilen veya sunulan ilanların linklerini ekleyin.</p>
+        <div id="listingRows"></div>
+        <button type="button" class="add-listing-btn" id="addListingBtn">+ Portföy ekle</button>
+      </div>
+      <div class="listings-section" id="portfolioSection" style="display:${type==='satici'?'block':'none'};">
+        <h3>Portföy durumu</h3>
+        <p class="hint">Bu satıcı portföye alındı mı, yoksa hâlâ görüşme aşamasında mı?</p>
+        <div class="portfolio-toggle">
+          <button type="button" id="statusNego" class="${(!c || c.portfolioStatus!=='listed') ? 'sel-nego' : ''}">Görüşme aşamasında</button>
+          <button type="button" id="statusListed" class="${(c && c.portfolioStatus==='listed') ? 'sel-listed' : ''}">Portföye alındı</button>
+        </div>
+        <div class="form-group" id="portfolioLinkGroup" style="display:${(c && c.portfolioStatus==='listed') ? 'block' : 'none'};">
+          <label>İlan linki</label>
+          <input type="text" id="f_portfolioLink" value="${c ? escapeHtml(c.portfolioLink||'') : ''}" placeholder="https://...">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <div class="left">
+          ${c ? '<button class="btn-secondary" id="delBtn">Sil</button>' : ''}
+        </div>
+        <div class="left">
+          <button class="btn-secondary" id="cancelBtn">Vazgeç</button>
+          <button class="btn-primary" id="saveBtn">${c ? 'Kaydet' : 'Ekle'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  let curType = type;
+  let listings = c && c.listings ? c.listings.map(l=>({...l})) : [];
+  const btnBuyer = overlay.querySelector('#typeBuyer');
+  const btnSeller = overlay.querySelector('#typeSeller');
+  const listingsSection = overlay.querySelector('#listingsSection');
+  const portfolioSection = overlay.querySelector('#portfolioSection');
+  const mahalleSingleGroup = overlay.querySelector('#mahalleSingleGroup');
+  const mahalleMultiGroup = overlay.querySelector('#mahalleMultiGroup');
+  const dealTypeGroup = overlay.querySelector('#dealTypeGroup');
+  function refreshTypeButtons(){
+    btnBuyer.className = curType==='alici' ? 'sel-buyer' : '';
+    btnSeller.className = curType==='satici' ? 'sel-seller' : '';
+    overlay.querySelector('#priceLabel').textContent = curType==='alici' ? (curDealType==='kiralik' ? 'Aylık kira bütçesi (₺)' : 'Bütçe (₺)') : 'Satış fiyatı (₺)';
+    listingsSection.style.display = curType==='alici' ? 'block' : 'none';
+    portfolioSection.style.display = curType==='satici' ? 'block' : 'none';
+    mahalleMultiGroup.style.display = curType==='alici' ? 'block' : 'none';
+    mahalleSingleGroup.style.display = curType==='satici' ? 'block' : 'none';
+    dealTypeGroup.style.display = curType==='alici' ? 'block' : 'none';
+  }
+  btnBuyer.addEventListener('click', ()=>{ curType='alici'; refreshTypeButtons(); });
+  btnSeller.addEventListener('click', ()=>{ curType='satici'; refreshTypeButtons(); });
+
+  let curDealType = (c && c.dealType==='kiralik') ? 'kiralik' : 'satilik';
+  const dealSaleBtn = overlay.querySelector('#dealSale');
+  const dealRentBtn = overlay.querySelector('#dealRent');
+  function refreshDealButtons(){
+    dealSaleBtn.className = curDealType==='satilik' ? 'sel-buyer' : '';
+    dealRentBtn.className = curDealType==='kiralik' ? 'sel-buyer' : '';
+    overlay.querySelector('#priceLabel').textContent = curDealType==='kiralik' ? 'Aylık kira bütçesi (₺)' : 'Bütçe (₺)';
+  }
+  dealSaleBtn.addEventListener('click', ()=>{ curDealType='satilik'; refreshDealButtons(); });
+  dealRentBtn.addEventListener('click', ()=>{ curDealType='kiralik'; refreshDealButtons(); });
+
+  // --- Cascading address: İl -> İlçe -> Mahalle (all select-driven) ---
+  const ilSelect = overlay.querySelector('#f_il');
+  let curIl = ilSelect.value;
+  let curIlce = c ? (c.ilce || '') : '';
+  let curMahalleSingle = c ? (c.mahalle || '') : '';
+  let selectedMahalleler = c && c.mahalleler ? [...c.mahalleler] : [];
+
+  const ilceSelect = overlay.querySelector('#f_ilce_select');
+  const ilceNewWrap = overlay.querySelector('#ilceNewWrap');
+  const ilceNewInput = overlay.querySelector('#f_ilceNew');
+
+  const mahalleSelect = overlay.querySelector('#f_mahalle_select');
+  const mahalleNewWrap = overlay.querySelector('#mahalleNewWrap');
+  const mahalleNewInput = overlay.querySelector('#f_mahalleNew');
+
+  const mahalleChipsEl = overlay.querySelector('#mahalleChips');
+  const mahalleAddSelect = overlay.querySelector('#f_mahalleAdd_select');
+  const mahalleMultiNewWrap = overlay.querySelector('#mahalleMultiNewWrap');
+  const mahalleMultiNewInput = overlay.querySelector('#f_mahalleMultiNew');
+
+  function populateIlceSelect(){
+    const list = getIlceOptions(curIl);
+    ilceSelect.innerHTML = '<option value="">İlçe seçin</option>' +
+      list.map(x => `<option value="${escapeHtml(x)}" ${x===curIlce?'selected':''}>${escapeHtml(x)}</option>`).join('') +
+      '<option value="__new__">+ Yeni ilçe ekle</option>';
+    ilceSelect.disabled = !curIl;
+  }
+
+  function populateMahalleSelect(){
+    const list = addressMaster.mahalleByKey[addressKey(curIl, curIlce)] || [];
+    mahalleSelect.innerHTML = '<option value="">Mahalle seçin</option>' +
+      list.map(x => `<option value="${escapeHtml(x)}" ${x===curMahalleSingle?'selected':''}>${escapeHtml(x)}</option>`).join('') +
+      '<option value="__new__">+ Yeni mahalle ekle</option>';
+    mahalleSelect.disabled = !(curIl && curIlce);
+  }
+
+  function renderMahalleChips(){
+    mahalleChipsEl.innerHTML = selectedMahalleler.map((m,i) => `
+      <span class="chip">${escapeHtml(m)}<button type="button" data-idx="${i}" aria-label="Kaldır">×</button></span>
+    `).join('');
+    mahalleChipsEl.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        selectedMahalleler.splice(Number(btn.getAttribute('data-idx')), 1);
+        renderMahalleChips();
+        populateMahalleAddSelect();
+      });
+    });
+  }
+
+  function populateMahalleAddSelect(){
+    const list = (addressMaster.mahalleByKey[addressKey(curIl, curIlce)] || [])
+      .filter(m => !selectedMahalleler.some(s => s.toLowerCase()===m.toLowerCase()));
+    mahalleAddSelect.innerHTML = '<option value="">Mahalle ekle...</option>' +
+      list.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('') +
+      '<option value="__new__">+ Yeni mahalle ekle</option>';
+    mahalleAddSelect.disabled = !(curIl && curIlce);
+  }
+
+  populateIlceSelect();
+  populateMahalleSelect();
+  renderMahalleChips();
+  populateMahalleAddSelect();
+
+  ilSelect.addEventListener('change', ()=>{
+    curIl = ilSelect.value;
+    curIlce = '';
+    curMahalleSingle = '';
+    selectedMahalleler = [];
+    ilceNewWrap.style.display = 'none';
+    mahalleNewWrap.style.display = 'none';
+    mahalleMultiNewWrap.style.display = 'none';
+    populateIlceSelect();
+    populateMahalleSelect();
+    renderMahalleChips();
+    populateMahalleAddSelect();
+  });
+
+  ilceSelect.addEventListener('change', ()=>{
+    if(ilceSelect.value === '__new__'){
+      ilceNewWrap.style.display = 'block';
+      ilceSelect.value = curIlce || '';
+      ilceNewInput.focus();
+      return;
+    }
+    curIlce = ilceSelect.value;
+    curMahalleSingle = '';
+    selectedMahalleler = [];
+    ilceNewWrap.style.display = 'none';
+    populateMahalleSelect();
+    renderMahalleChips();
+    populateMahalleAddSelect();
+  });
+
+  overlay.querySelector('#ilceNewAdd').addEventListener('click', ()=>{
+    const val = ilceNewInput.value.trim();
+    if(!val) return;
+    addIlce(curIl, val);
+    curIlce = val;
+    ilceNewInput.value = '';
+    ilceNewWrap.style.display = 'none';
+    populateIlceSelect();
+    populateMahalleSelect();
+    populateMahalleAddSelect();
+  });
+
+  mahalleSelect.addEventListener('change', ()=>{
+    if(mahalleSelect.value === '__new__'){
+      mahalleNewWrap.style.display = 'block';
+      mahalleSelect.value = curMahalleSingle || '';
+      mahalleNewInput.focus();
+      return;
+    }
+    curMahalleSingle = mahalleSelect.value;
+    mahalleNewWrap.style.display = 'none';
+  });
+
+  overlay.querySelector('#mahalleNewAdd').addEventListener('click', ()=>{
+    const val = mahalleNewInput.value.trim();
+    if(!val) return;
+    addMahalle(curIl, curIlce, val);
+    curMahalleSingle = val;
+    mahalleNewInput.value = '';
+    mahalleNewWrap.style.display = 'none';
+    populateMahalleSelect();
+  });
+
+  mahalleAddSelect.addEventListener('change', ()=>{
+    if(mahalleAddSelect.value === '__new__'){
+      mahalleMultiNewWrap.style.display = 'block';
+      mahalleAddSelect.value = '';
+      mahalleMultiNewInput.focus();
+      return;
+    }
+    if(mahalleAddSelect.value){
+      selectedMahalleler.push(mahalleAddSelect.value);
+      renderMahalleChips();
+      populateMahalleAddSelect();
+    }
+  });
+
+  overlay.querySelector('#mahalleMultiNewAdd').addEventListener('click', ()=>{
+    const val = mahalleMultiNewInput.value.trim();
+    if(!val) return;
+    addMahalle(curIl, curIlce, val);
+    if(!selectedMahalleler.some(s=>s.toLowerCase()===val.toLowerCase())) selectedMahalleler.push(val);
+    mahalleMultiNewInput.value = '';
+    mahalleMultiNewWrap.style.display = 'none';
+    renderMahalleChips();
+    populateMahalleAddSelect();
+  });
+
+
+  const priceInputEl = overlay.querySelector('#f_price');
+  priceInputEl.addEventListener('input', ()=>{
+    const digitsOnly = priceInputEl.value.replace(/\D/g, '');
+    if(!digitsOnly){ priceInputEl.value = ''; return; }
+    priceInputEl.value = Number(digitsOnly).toLocaleString('tr-TR');
+  });
+
+  const ptypeSelect = overlay.querySelector('#f_ptype');
+  const featureFieldsEl = overlay.querySelector('#featureFields');
+  let featureValues = c && c.features ? {...c.features} : {};
+  function renderFeatureFields(){
+    const schema = FEATURE_SCHEMAS[schemaKeyFor(ptypeSelect.value)];
+    featureFieldsEl.innerHTML = schema.map(f => `
+      <div class="form-group">
+        <label>${f.label}</label>
+        <input type="text" data-fkey="${f.key}" value="${escapeHtml(featureValues[f.key]||'')}" placeholder="${f.placeholder}">
+      </div>
+    `).join('');
+    featureFieldsEl.querySelectorAll('[data-fkey]').forEach(inputEl=>{
+      inputEl.addEventListener('input', ()=>{ featureValues[inputEl.getAttribute('data-fkey')] = inputEl.value; });
+    });
+  }
+  renderFeatureFields();
+  ptypeSelect.addEventListener('change', ()=>{ featureValues = {}; renderFeatureFields(); });
+
+  const listingRowsEl = overlay.querySelector('#listingRows');
+  function renderListingRows(){
+    if(listings.length === 0){
+      listingRowsEl.innerHTML = '';
+      return;
+    }
+    listingRowsEl.innerHTML = listings.map((l, i) => `
+      <div class="listing-row" data-idx="${i}">
+        <div class="lr-top">
+          <input type="text" class="lr-title" data-field="title" placeholder="İlan başlığı / adres" value="${escapeHtml(l.title||'')}">
+        </div>
+        <div class="lr-top">
+          <input type="text" class="lr-url" data-field="url" placeholder="https://..." value="${escapeHtml(l.url||'')}">
+        </div>
+        <div class="lr-bottom">
+          <select data-field="status">
+            ${['Gösterildi','Sunuldu','Beğendi','Reddetti'].map(s=>`<option ${l.status===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+          <button type="button" class="lr-remove" data-idx="${i}">Kaldır</button>
+        </div>
+      </div>
+    `).join('');
+
+    listingRowsEl.querySelectorAll('.listing-row').forEach(rowEl=>{
+      const idx = Number(rowEl.getAttribute('data-idx'));
+      rowEl.querySelectorAll('[data-field]').forEach(inputEl=>{
+        const field = inputEl.getAttribute('data-field');
+        inputEl.addEventListener('input', ()=>{ listings[idx][field] = inputEl.value; });
+        inputEl.addEventListener('change', ()=>{ listings[idx][field] = inputEl.value; });
+      });
+    });
+    listingRowsEl.querySelectorAll('.lr-remove').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const idx = Number(btn.getAttribute('data-idx'));
+        listings.splice(idx,1);
+        renderListingRows();
+      });
+    });
+  }
+  renderListingRows();
+
+  overlay.querySelector('#addListingBtn').addEventListener('click', ()=>{
+    listings.push({id: uid(), title:'', url:'', status:'Gösterildi', date: Date.now()});
+    renderListingRows();
+  });
+
+  let portfolioStatus = (c && c.portfolioStatus === 'listed') ? 'listed' : 'nego';
+  const statusNego = overlay.querySelector('#statusNego');
+  const statusListed = overlay.querySelector('#statusListed');
+  const portfolioLinkGroup = overlay.querySelector('#portfolioLinkGroup');
+  function refreshPortfolioButtons(){
+    statusNego.className = portfolioStatus==='nego' ? 'sel-nego' : '';
+    statusListed.className = portfolioStatus==='listed' ? 'sel-listed' : '';
+    portfolioLinkGroup.style.display = portfolioStatus==='listed' ? 'block' : 'none';
+  }
+  statusNego.addEventListener('click', ()=>{ portfolioStatus='nego'; refreshPortfolioButtons(); });
+  statusListed.addEventListener('click', ()=>{ portfolioStatus='listed'; refreshPortfolioButtons(); });
+
+  overlay.querySelector('#cancelBtn').addEventListener('click', ()=> overlay.remove());
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) overlay.remove(); });
+
+  const delBtn = overlay.querySelector('#delBtn');
+  if(delBtn){
+    delBtn.addEventListener('click', async ()=>{
+      if(confirm('Bu müşteriyi silmek istediğinize emin misiniz?')){
+        await deleteCustomer(c.id);
+        customers = customers.filter(x=>x.id!==c.id);
+        overlay.remove();
+        render();
+      }
+    });
+  }
+
+  overlay.querySelector('#saveBtn').addEventListener('click', async ()=>{
+    const name = overlay.querySelector('#f_name').value.trim();
+    const errEl = overlay.querySelector('#err_name');
+    if(!name){ errEl.style.display='block'; return; }
+    errEl.style.display='none';
+
+    const priceRaw = overlay.querySelector('#f_price').value.replace(/\D/g,'');
+    const cleanListings = curType==='alici'
+      ? listings.filter(l => (l.title && l.title.trim()) || (l.url && l.url.trim())).map(l=>({
+          id: l.id || uid(),
+          title: (l.title||'').trim(),
+          url: (l.url||'').trim(),
+          status: l.status || 'Gösterildi',
+          date: l.date || Date.now()
+        }))
+      : [];
+    const data = {
+      id: c ? c.id : uid(),
+      type: curType,
+      dealType: curType==='alici' ? curDealType : undefined,
+      name: name,
+      phone: overlay.querySelector('#f_phone').value.trim(),
+      email: overlay.querySelector('#f_email').value.trim(),
+      propertyType: overlay.querySelector('#f_ptype').value,
+      il: curIl,
+      ilce: curIlce,
+      mahalle: curType==='satici' ? curMahalleSingle : '',
+      mahalleler: curType==='alici' ? [...selectedMahalleler] : [],
+      features: featureValues,
+      price: priceRaw ? Number(priceRaw) : null,
+      status: overlay.querySelector('#f_status').value,
+      notes: overlay.querySelector('#f_notes').value.trim(),
+      listings: cleanListings,
+      portfolioStatus: curType==='satici' ? portfolioStatus : undefined,
+      portfolioLink: curType==='satici' ? overlay.querySelector('#f_portfolioLink').value.trim() : '',
+      createdAt: c ? c.createdAt : Date.now()
+    };
+    try{
+      await saveCustomer(data);
+    }catch(e){
+      console.error('Customer save error:', e);
+      alert('Kaydedilirken bir hata oluştu, tekrar deneyin.');
+      return;
+    }
+    if(data.il && data.ilce) addIlce(data.il, data.ilce);
+    if(curType==='satici' && data.mahalle) addMahalle(data.il, data.ilce, data.mahalle);
+    if(curType==='alici' && data.mahalleler.length) data.mahalleler.forEach(m => addMahalle(data.il, data.ilce, m));
+    await flushAddressMasterIfDirty();
+    const idx = customers.findIndex(x=>x.id===data.id);
+    if(idx >= 0) customers[idx] = data; else customers.unshift(data);
+    activeTab = curType;
+    overlay.remove();
+    render();
+    showToast(c ? 'Müşteri güncellendi.' : 'Müşteri eklendi.');
+  });
+}
+
+loadAll();
+</script>
+</body>
+</html>
