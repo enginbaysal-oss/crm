@@ -279,7 +279,7 @@ async function restoreAuth(){
 function logout(){
  const token=privateSession?.access_token;
  if(token)apiCall('/auth/v1/logout',{method:'POST'}).catch(()=>{});
- privateSession=null;currentUser=null;rows=[];searchLabels=[];selected=null;detailOpen=false;
+ privateSession=null;currentUser=null;rows=[];searchLabels={};selected=null;detailOpen=false;
  localStorage.removeItem(SESSION_KEY);
  $('privateMain').hidden=true;$('detailBackdrop').hidden=true;$('authGate').hidden=false;
  reportAuth('Oturum kapatıldı. Başka bir hesaba ait ilanlar görünmez.');
