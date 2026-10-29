@@ -4,67 +4,135 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>İlan Asistanı | Emlak CRM</title>
 <style>
-:root{--bg:#f6f3ec;--ink:#22303a;--muted:#64717b;--line:#ded8c8;--bronze:#936c3b;--white:#fff;--green:#28634c;--red:#a6392e}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px system-ui,Segoe UI,Arial,sans-serif;color:var(--ink)}
-main{max-width:1180px;margin:auto;padding:22px 18px 65px}header{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
-h1{margin:3px 0;font-size:29px;font-weight:650}h2{font-size:17px;margin:0 0 12px}p{line-height:1.5}
-.small{color:var(--muted);font-size:12px}.eyebrow{color:var(--bronze);font-weight:750;letter-spacing:.08em;font-size:11px;text-transform:uppercase}
-a{color:#145e77}button,.btn{border:1px solid #c8c0b0;border-radius:9px;background:#fff;color:var(--ink);font:inherit;padding:10px 13px;cursor:pointer;text-decoration:none;display:inline-block}
-button:hover,.btn:hover{border-color:var(--bronze)}button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+:root{--bg:#f5f3ee;--ink:#1d3040;--muted:#627281;--line:#dedfdc;--bronze:#a67539;--white:#fff;--green:#287457;--red:#a43e38;--blue:#155577}
+*{box-sizing:border-box} [hidden]{display:none!important} body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+main{max-width:1280px;margin:0 auto;padding:23px 20px 62px}
+header.page-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+h1{font-size:29px;margin:2px 0 3px;font-weight:760;letter-spacing:-.03em}
+h2{font-size:19px;line-height:1.35;margin:0 0 12px}p{line-height:1.55}
+.eyebrow{color:var(--bronze);font-weight:800;letter-spacing:.08em;font-size:11px;text-transform:uppercase}
+.small{font-size:12px;color:var(--muted)}
+a{color:var(--blue)}
+button,.btn{font:inherit;border:1px solid #cbd2d3;background:var(--white);border-radius:9px;color:var(--ink);padding:9px 13px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+button:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid #d6a968;outline-offset:2px}
+button:hover,.btn:hover{border-color:var(--bronze)}
+button.primary{background:var(--ink);border-color:var(--ink);color:#fff}
 button:disabled{opacity:.5;cursor:not-allowed}
-input,textarea,select{width:100%;border:1px solid #c8c0b0;border-radius:9px;background:#fff;color:var(--ink);font:inherit;padding:11px}
-textarea{resize:vertical;min-height:95px;line-height:1.5}label{display:block;font-size:12px;font-weight:700;margin:12px 0 5px}
-.card{background:var(--white);border:1px solid var(--line);border-radius:13px;padding:18px;min-width:0}
-.alert{padding:11px 14px;background:#f5ead8;border:1px solid #dbc79f;border-radius:9px;line-height:1.5;margin-bottom:16px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-.stat .n{font-size:26px;font-weight:700}.stat .t{font-size:12px;color:var(--muted)}
-.columns{display:grid;grid-template-columns:360px 1fr;gap:15px;align-items:start}
-.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.controls>*{flex:1}#mailText{min-height:160px}
-.list{display:flex;flex-direction:column;gap:8px;max-height:640px;overflow:auto;padding-right:2px;margin-top:12px}
-.item{text-align:left;width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:10px;background:#fff}
-.item.selected{border-color:var(--bronze);background:#faf3e9;box-shadow:inset 3px 0 var(--bronze)}
-.item .title{font-weight:650;margin-bottom:5px}.item .meta{color:var(--muted);font-size:12px;line-height:1.5}
-.pill{display:inline-block;border-radius:100px;padding:3px 8px;font-size:11px;font-weight:700;background:#edf0f2;color:#52616a;margin-top:7px}
-.pill.good{background:#e4f1e9;color:var(--green)}.pill.bad{background:#fbe8e6;color:var(--red)}.pill.warn{background:#fff0d8;color:#825217}
-#detail{min-height:430px}.detail-title{font-size:21px;line-height:1.35;font-weight:700;margin:7px 0}
-.detail-meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);margin-bottom:10px}
-.note{border-left:3px solid var(--bronze);background:#faf7f0;padding:10px 12px;margin:12px 0;font-size:13px;line-height:1.5}
+input,select,textarea{width:100%;border:1px solid #cbd2d3;border-radius:9px;padding:11px;background:#fff;color:var(--ink);font:inherit}
+textarea{resize:vertical;min-height:90px;line-height:1.55}
+label{display:block;font-size:12px;font-weight:700;margin:12px 0 5px}
+.card{border:1px solid var(--line);border-radius:14px;background:var(--white);padding:17px}
+.controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.controls>*{flex:1}
+.alert{padding:11px 14px;background:#f7eddd;border:1px solid #e3d2b9;border-radius:10px;margin-bottom:13px;font-size:12px;line-height:1.55}
+.feed-bar{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 15px;border-radius:12px;background:#fff;border:1px solid var(--line);margin-bottom:14px}
+.feed-bar>div{min-width:0}.feed-bar #feedStatus{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.35}
+.feed-bar button{flex-shrink:0}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:16px}
+.stat{padding:12px 15px;display:flex;align-items:center;gap:12px}
+.stat .n{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.stat .t{font-size:12px;color:var(--muted);line-height:1.3}
+.workspace{padding:20px;min-height:390px}
+.workspace-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.workspace-header h2{margin:0 0 4px}
+.tab-strip{display:flex;gap:7px;overflow-x:auto;scrollbar-width:thin;white-space:nowrap;padding:1px 0 10px;margin-bottom:8px}
+.tab-strip button{flex:0 0 auto;padding:10px 15px;border-radius:11px;font-weight:650;background:#f6f7f7}
+.tab-strip button.active{background:var(--ink);border-color:var(--ink);color:#fff}
+.tab-count{display:inline-flex;min-width:24px;padding:2px 6px;justify-content:center;background:#e5eaee;border-radius:20px;font-size:11px}
+.tab-strip button.active .tab-count{background:#405362;color:#fff}
+.filter-bar{display:grid;grid-template-columns:minmax(180px,1.7fr) minmax(160px,1fr) minmax(145px,1fr);gap:10px;margin-bottom:15px}
+.filter-bar input,.filter-bar select{height:42px}
+.list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch}
+.item{width:100%;text-align:left;display:flex;flex-direction:column;align-items:stretch;justify-content:space-between;gap:11px;border:1px solid #dfe4e3;background:#fff;border-radius:13px;padding:15px;min-height:184px;box-shadow:0 2px 5px #172a3608;transition:border-color .15s,box-shadow .15s,transform .15s}
+.item:hover{border-color:#b99a72;box-shadow:0 6px 18px #172a3612;transform:translateY(-1px)}
+.item-top{display:flex;align-items:center;gap:9px;justify-content:space-between}
+.property-kind{display:inline-flex;gap:7px;align-items:center;color:#315466;font-size:11px;font-weight:750;letter-spacing:.01em}
+.item .title{font-size:15px;font-weight:750;line-height:1.42;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.price{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.015em;line-height:1.1}
+.item-bottom{display:flex;gap:10px;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid #eef0ee;font-size:12px}
+.item-bottom .view{color:#0b6174;font-weight:750}
+.meta{color:var(--muted);font-size:12px}
+.pill{display:inline-block;border-radius:30px;padding:4px 8px;background:#e9edef;color:#50616d;font-size:10px;font-weight:800;white-space:nowrap}
+.pill.good{background:#e5f2eb;color:var(--green)}
+.pill.bad{background:#fae9e7;color:var(--red)}
+.pill.warn{background:#fff0d8;color:#855d23}
+.empty{padding:60px 18px;text-align:center;color:var(--muted);border:1px dashed #cbd2d3;border-radius:12px;grid-column:1/-1}
+.data-tools{background:#fff;border:1px solid var(--line);border-radius:12px;margin-top:16px;overflow:hidden}
+.data-tools>summary{padding:13px 17px;cursor:pointer;font-weight:700}
+.data-tools-content{padding:0 17px 18px}
+.data-tools-content textarea{min-height:130px}
+.note{border-left:3px solid var(--bronze);background:#faf5ec;padding:10px 12px;margin:12px 0;font-size:12px;line-height:1.55}
+#detailBackdrop{position:fixed;inset:0;z-index:20;background:#162b3d99;display:flex;justify-content:flex-end;align-items:stretch}
+.detail-shell{width:min(600px,100vw);height:100%;background:#fff;box-shadow:-12px 0 38px #0002;display:flex;flex-direction:column}
+.detail-head{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:1px solid var(--line);gap:12px}
+.detail-head h2{margin:0;font-size:17px}
+#detail{overflow-y:auto;flex:1;padding:20px 22px 55px}
+.detail-title{font-size:22px;font-weight:800;line-height:1.35;margin:6px 0 9px}
+.detail-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px;color:var(--muted);margin-bottom:14px}
 .message{padding:12px;background:#f5f7f8;border:1px solid #dce1e4;border-radius:9px;white-space:pre-wrap;line-height:1.5}
-.split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-#toast{position:fixed;bottom:20px;right:20px;max-width:360px;background:#22303a;color:#fff;border-radius:9px;padding:12px 16px;display:none;z-index:5}
-.empty{text-align:center;color:var(--muted);padding:40px 14px;border:1px dashed var(--line);border-radius:10px}
 hr{border:0;border-top:1px solid var(--line);margin:20px 0}
-@media(max-width:860px){.columns{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.list{max-height:330px}}
-@media(max-width:450px){.split{grid-template-columns:1fr}header{align-items:flex-start}button,.btn{padding:9px 10px}}
+#toast{display:none;position:fixed;bottom:18px;right:18px;background:var(--ink);color:white;padding:12px 15px;border-radius:10px;z-index:40;max-width:360px}
+body.modal-open{overflow:hidden}
+@media(max-width:980px){.list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){main{padding:14px 12px 45px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.workspace{padding:14px}.filter-bar{grid-template-columns:1fr 1fr}.filter-bar input{grid-column:1/-1}.list{grid-template-columns:repeat(2,minmax(0,1fr))}.item{min-height:178px}.detail-shell{width:100vw}}
+@media(max-width:480px){.list{grid-template-columns:1fr}.stat{gap:8px;padding:11px}.stat .n{font-size:23px}.page-head .controls{width:100%}.page-head .controls>*{flex:1}.item{min-height:155px}.feed-bar{align-items:flex-start}.filter-bar{grid-template-columns:1fr 1fr}.filter-bar select{font-size:12px}}
 </style>
 </head>
 <body>
 <main>
 <header><div><div class="eyebrow">Emlak CRM / Deneme Modülü</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlan inceleme • Müşteri dönüşleri</div></div><div class="controls"><a class="btn" href="./index.html">← CRM'ye Dön</a><button id="speakBtn">🔊 Özeti Oku</button><button id="exportBtn">Yedek İndir</button></div></header>
 <div class="alert"><b>Doğrudan mesaj hazırlama modu.</b> Açıklama kopyalama zorunluluğu kaldırıldı. İlan satılık/kiralık ise doğru metin hazırlanır. “Mesajı Kopyala ve İlanı Aç” düğmesi sizi ilan sayfasına götürür. <b>Bu sürüm sahibinden.com üzerinden otomatik mesaj gönderemez.</b> Açıklamayı okumadığımız için satıcının emlakçılarla çalışmak istemediğini bilemeyiz; iletişim tercihlerini mutlaka gözetin.</div>
+<div class="feed-bar"><div><strong>Favori ilanlar • Otomatik senkronizasyon</strong><div id="feedStatus" role="status">Güncel ilanlar kontrol ediliyor...</div></div><button id="refreshFeedBtn" class="primary" type="button">↻ Yenile</button></div>
 <div class="stats">
-<div class="card stat"><div class="n" id="countAll">0</div><div class="t">Toplam farklı ilan</div></div>
+<div class="card stat"><div class="n" id="countAll">0</div><div class="t">Toplam ilan</div></div>
 <div class="card stat"><div class="n" id="countPending">0</div><div class="t">Türü belirsiz</div></div>
 <div class="card stat"><div class="n" id="countReady">0</div><div class="t">Mesajı hazır</div></div>
-<div class="card stat"><div class="n" id="countReply">0</div><div class="t">Manuel yanıt bekleyen</div></div>
+<div class="card stat"><div class="n" id="countReply">0</div><div class="t">Yanıt bekleyen</div></div>
 </div>
-<div class="columns">
-<section class="card">
-<h2>1. Yeni ilanlar</h2><div class="small">Favori aramalarınızın ilan listesi bu sayfa açıldığında otomatik güncellenir. Yeni ilanlar eklenir; müşteri görüşme durumlarınız korunur.</div>
-<div class="note" id="feedStatus" role="status">İlan kaynağı kontrol ediliyor...</div>
-<button id="refreshFeedBtn" class="primary" type="button">↻ Şimdi Yenile</button><hr><h2>Yedek dosyadan ekle (isteğe bağlı)</h2><div class="small">Normal kullanımda dosya yüklemeniz gerekmez. Yalnızca otomatik bağlantı çalışmadığında kullanın.</div>
-<label for="importFile">İlan dosyası (.json)</label><input id="importFile" type="file" accept=".json,.txt,.eml,application/json,text/plain"><div class="controls" style="margin-top:9px"><button id="importFileBtn" class="primary">İlan Dosyasını Yükle</button></div><div class="note">Dosyayı ChatGPT üzerinden indirip buradan seçebilirsiniz. İlanlar türüne göre mesaj hazırlama kuyruğuna eklenir; sahibinden.com'a otomatik gönderim yapılmaz.</div><hr><h2>Alternatif: E-posta metni yapıştır</h2><div class="small">Yalnızca e-posta adresi değil, <b>ilan bağlantılarını içeren tam bildirim metni</b> gerekir.</div><label for="mailText">Favori arama bildirim metni</label><textarea id="mailText" placeholder="Favori Aramanız için Sonuçlar&#10;[İlan başlığı](https://pro.sahibinden.com/?return_url=https://www.sahibinden.com/ilan/...)&#10;#1234567890&#10;Fiyat: 4.100.000 TL"></textarea>
-<div class="controls" style="margin-top:9px"><button id="importBtn" class="primary">İlanları İçeri Al</button><button id="clearMailBtn">Metni Temizle</button></div>
-<hr>
-<h2>2. İlanları takip et</h2>
-<div class="controls"><input id="search" placeholder="Başlık veya ilan no ara" aria-label="İlan ara"><select id="filter" aria-label="Duruma göre filtre"><option value="all">Tüm durumlar</option><option value="review">Türü belirsiz</option><option value="ready">Mesaj hazır</option><option value="blocked">İletişim istemiyor</option><option value="manual">Manuel yanıt</option></select></div>
-<div id="list" class="list"></div>
+<section class="card workspace" aria-label="Favori ilanlar">
+ <div class="workspace-header"><div><h2>İlanlarım</h2><div class="small">Bir kategori seçin, ilan kartına dokunarak mesaj ve görüşme bilgilerini açın.</div></div><div id="resultCount" class="small" aria-live="polite">0 ilan gösteriliyor</div></div>
+ <div class="tab-strip" id="categoryTabs" aria-label="İlan kategorileri" role="group">
+  <button type="button" class="active" data-category="all" aria-pressed="true">Tümü <span class="tab-count" id="tabAll">0</span></button>
+  <button type="button" data-category="satilik" aria-pressed="false">Satılık <span class="tab-count" id="tabSale">0</span></button>
+  <button type="button" data-category="kiralik" aria-pressed="false">Kiralık <span class="tab-count" id="tabRent">0</span></button>
+  <button type="button" data-category="ticari" aria-pressed="false">Ticari <span class="tab-count" id="tabCommercial">0</span></button>
+  <button type="button" data-category="konut" aria-pressed="false">Konut <span class="tab-count" id="tabHome">0</span></button>
+ </div>
+ <div class="filter-bar">
+  <input type="search" id="search" placeholder="İlan adı, konum veya ilan no ara..." aria-label="İlan ara">
+  <select id="filter" aria-label="Görüşme durumuna göre filtre">
+   <option value="all">Tüm görüşme durumları</option><option value="ready">Mesaj hazır</option>
+   <option value="sent">Mesaj gönderildi</option><option value="manual">Manuel cevap bekliyor</option>
+   <option value="negative">Olumsuz</option><option value="blocked">İletişim yok / engelli</option><option value="review">Türü belirsiz</option>
+  </select>
+  <select id="sort" aria-label="İlanları sırala">
+   <option value="id-desc">İlan no: yeni → eski</option>
+   <option value="price-asc">Fiyat: düşük → yüksek</option>
+   <option value="price-desc">Fiyat: yüksek → düşük</option>
+   <option value="name">Başlık: A → Z</option>
+  </select>
+ </div>
+ <div id="list" class="list" aria-live="polite"></div>
 </section>
-<section class="card" id="detail"><div class="empty">Soldan bir ilan seçin veya favori arama e-postası ekleyin.</div></section>
-</div>
-<div class="small" style="margin-top:18px">Veriler yalnızca bu tarayıcıdaki yerel depolamada saklanır; başka cihazlarla senkronize edilmez. Çıkmadan önce “Yedek İndir” ile kayıtlarınızı koruyun. Bu uygulama sahibinden.com ile resmî bir entegrasyon değildir.</div>
+<details class="data-tools"><summary>Yedek dosyadan veya e-postadan manuel ilan ekle (isteğe bağlı)</summary>
+ <div class="data-tools-content">
+  <p class="small">Normal kullanımda dosya yüklemeniz gerekmez. Otomatik aktarım çalışmadığında kullanabilirsiniz.</p>
+  <label for="importFile">İlan dosyası (.json, .txt, .eml)</label>
+  <input id="importFile" type="file" accept=".json,.txt,.eml,application/json,text/plain">
+  <div class="controls" style="margin-top:9px"><button id="importFileBtn" class="primary">İlan Dosyasını Yükle</button></div>
+  <hr><label for="mailText">Favori arama e-postasının tam içeriği</label>
+  <textarea id="mailText" placeholder="İlan bağlantılarını içeren bildirim metni..."></textarea>
+  <div class="controls" style="margin-top:9px"><button id="importBtn" class="primary">İlanları İçeri Al</button><button id="clearMailBtn">Metni Temizle</button></div>
+ </div>
+</details>
+<div class="small" style="margin-top:16px">İlanlar ortak dosyadan yenilenir. Mesaj ve görüşme kayıtları bu tarayıcının yerel depolamasında tutulur; farklı cihazlara kendiliğinden aktarılmaz. Sahibinden.com'a otomatik mesaj gönderilmez.</div>
 </main>
+<div id="detailBackdrop" hidden>
+ <section class="detail-shell" role="dialog" aria-modal="true" aria-label="İlan detayları">
+   <div class="detail-head"><h2>İlan detayı ve iletişim</h2><button id="closeDetails" type="button" aria-label="İlan detayını kapat">✕ Kapat</button></div>
+   <div id="detail"></div>
+ </section>
+</div>
 <div id="toast" role="status"></div>
 <script>
 (function(){
@@ -153,20 +221,54 @@ function label(r){
  return {review:'Türü belirsiz',ready:'Mesaj hazır',blocked:'İletişim istemiyor',sent:'İletişime geçildi',negative:'Olumsuz dönüş',manual:'Manuel değerlendirme',positive:'Olumlu dönüş',blockedReply:'Bir daha iletişim kurma'}[r.status]||r.status;
 }
 function cssStatus(s){return ['ready','positive'].includes(s)?'good':['blocked','blockedReply','negative'].includes(s)?'bad':'warn';}
+let category='all', detailOpen=false, focusReturn=null;
+function kind(r){return r.url.includes('/emlak-is-yeri-')?'ticari':r.url.includes('/emlak-konut-')?'konut':'diger';}
+function numericPrice(r){const digits=String(r.price||'').replace(/[^\d]/g,'');return digits?Number(digits):Number.POSITIVE_INFINITY;}
+function inCategory(r,c){return c==='all'||c==='satilik'&&r.type==='satilik'||c==='kiralik'&&r.type==='kiralik'||c==='ticari'&&kind(r)==='ticari'||c==='konut'&&kind(r)==='konut';}
+function inStatus(r,f){return f==='all'||f==='manual'&&['manual','positive'].includes(r.status)||f==='blocked'&&['blocked','blockedReply'].includes(r.status)||r.status===f;}
+function openDetails(id,source){
+ const r=rows.find(x=>x.id===id);if(!r)return;
+ selected=id;detailOpen=true;focusReturn=source||null;
+ $('detailBackdrop').hidden=false;document.body.classList.add('modal-open');
+ showDetail();
+ $('closeDetails').focus();
+}
+function closeDetails(){
+ detailOpen=false;$('detailBackdrop').hidden=true;document.body.classList.remove('modal-open');
+ if(focusReturn&&focusReturn.isConnected)focusReturn.focus();
+ focusReturn=null;
+}
 function render(){
  $('countAll').textContent=rows.length;
  $('countPending').textContent=rows.filter(r=>r.status==='review').length;
  $('countReady').textContent=rows.filter(r=>r.status==='ready').length;
  $('countReply').textContent=rows.filter(r=>['manual','positive'].includes(r.status)).length;
- const q=normalize($('search').value),f=$('filter').value;
- const a=rows.filter(r=>(!q||normalize(r.title+' '+r.id).includes(q))&&(f==='all'||(f==='manual'?['manual','positive'].includes(r.status):f==='blocked'?['blocked','blockedReply'].includes(r.status):r.status===f)));
- $('list').innerHTML=a.length?a.map(r=>'<button type="button" class="item '+(r.id===selected?'selected':'')+'" data-id="'+r.id+'"><div class="title">'+escapeHtml(r.title)+'</div><div class="meta">#'+r.id+' • '+escapeHtml(r.price)+' • '+(r.type==='kiralik'?'Kiralık':r.type==='satilik'?'Satılık':'Tür belirsiz')+'</div><span class="pill '+cssStatus(r.status)+'">'+escapeHtml(label(r))+'</span></button>').join(''):'<div class="empty">Bu filtrede ilan bulunamadı.</div>';
- $('list').querySelectorAll('[data-id]').forEach(el=>el.addEventListener('click',()=>{selected=el.dataset.id;render();}));
- showDetail();
+ for(const [id,c] of [['tabAll','all'],['tabSale','satilik'],['tabRent','kiralik'],['tabCommercial','ticari'],['tabHome','konut']]){$(id).textContent=rows.filter(r=>inCategory(r,c)).length;}
+ $('categoryTabs').querySelectorAll('[data-category]').forEach(btn=>{
+   const active=btn.dataset.category===category;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',active?'true':'false');
+ });
+ const q=normalize($('search').value),f=$('filter').value,sort=$('sort').value;
+ const a=rows.filter(r=>inCategory(r,category)&&inStatus(r,f)&&(!q||normalize([r.title,r.id,r.price,r.type].join(' ')).includes(q)));
+ if(sort==='price-asc')a.sort((x,y)=>numericPrice(x)-numericPrice(y));
+ else if(sort==='price-desc')a.sort((x,y)=>numericPrice(y)-numericPrice(x));
+ else if(sort==='name')a.sort((x,y)=>x.title.localeCompare(y.title,'tr'));
+ else a.sort((x,y)=>Number(y.id)-Number(x.id));
+ $('resultCount').textContent=a.length+' ilan gösteriliyor';
+ $('list').innerHTML=a.length?a.map(r=>{
+   const property=kind(r)==='ticari'?'Ticari gayrimenkul':kind(r)==='konut'?'Konut':'Gayrimenkul';
+   const glyph=kind(r)==='ticari'?'▦':'⌂';
+   const t=r.type==='kiralik'?'Kiralık':r.type==='satilik'?'Satılık':'Tür belirsiz';
+   return '<button type="button" class="item" data-id="'+r.id+'" aria-label="'+escapeHtml(r.title)+' ilanını incele">'+
+    '<div><div class="item-top"><span class="property-kind">'+glyph+' '+property+' · '+t+'</span><span class="pill '+cssStatus(r.status)+'">'+escapeHtml(label(r))+'</span></div>'+
+    '<div class="title" style="margin-top:13px">'+escapeHtml(r.title)+'</div></div>'+
+    '<div><div class="price">'+escapeHtml(r.price)+'</div><div class="item-bottom"><span class="meta">İlan #'+r.id+'</span><span class="view">İncele ›</span></div></div></button>';
+ }).join(''):'<div class="empty">Bu seçimde ilan bulunamadı. Üstteki kategoriyi veya filtreleri değiştirebilirsiniz.</div>';
+ $('list').querySelectorAll('[data-id]').forEach(btn=>btn.addEventListener('click',()=>openDetails(btn.dataset.id,btn)));
+ if(detailOpen)showDetail();
 }
 function showDetail(){
  const r=rows.find(x=>x.id===selected);
- if(!r){$('detail').innerHTML='<div class="empty">Soldan bir ilan seçin veya favori arama e-postası ekleyin.</div>';return;}
+ if(!r){$('detail').innerHTML='<div class="empty">İlan seçilmedi.</div>';return;}
  const typeName=r.type==='kiralik'?'Kiralık':r.type==='satilik'?'Satılık':'Belirsiz';
  const message=r.type==='kiralik'?RENT:r.type==='satilik'?SALE:'Önce satılık/kiralık türünü seçin.';
  const canPrepare=r.status==='ready';
@@ -252,7 +354,11 @@ async function refreshFeed(){
 }
 $('refreshFeedBtn').addEventListener('click',refreshFeed);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshFeed();});
-$('search').addEventListener('input',render);$('filter').addEventListener('change',render);
+$('search').addEventListener('input',render);$('filter').addEventListener('change',render);$('sort').addEventListener('change',render);
+$('categoryTabs').addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(!b)return;category=b.dataset.category;render();});
+$('closeDetails').addEventListener('click',closeDetails);
+$('detailBackdrop').addEventListener('click',e=>{if(e.target===$('detailBackdrop'))closeDetails();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&detailOpen)closeDetails();});
 $('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),listings:rows},null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download='ilan-asistani-yedek.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);});
 $('speakBtn').addEventListener('click',()=>{if(!('speechSynthesis' in window)){toast('Bu tarayıcı seslendirmeyi desteklemiyor.');return;}speechSynthesis.cancel();const msg='Toplam '+rows.length+' farklı ilan var. '+rows.filter(r=>r.status==='review').length+' ilan türü belirsiz. '+rows.filter(r=>r.status==='ready').length+' ilan için mesaj hazır. '+rows.filter(r=>['positive','manual'].includes(r.status)).length+' müşteri dönüşü sizin yanıtınızı bekliyor.';const u=new SpeechSynthesisUtterance(msg);u.lang='tr-TR';speechSynthesis.speak(u);});
 load();render();refreshFeed();
