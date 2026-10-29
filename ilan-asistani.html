@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>İlan Asistanı | Emlak CRM</title>
+<style>
+:root{--bg:#f6f3ec;--ink:#22303a;--muted:#64717b;--line:#ded8c8;--bronze:#936c3b;--white:#fff;--green:#28634c;--red:#a6392e}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px system-ui,Segoe UI,Arial,sans-serif;color:var(--ink)}
+main{max-width:1180px;margin:auto;padding:22px 18px 65px}header{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+h1{margin:3px 0;font-size:29px;font-weight:650}h2{font-size:17px;margin:0 0 12px}p{line-height:1.5}
+.small{color:var(--muted);font-size:12px}.eyebrow{color:var(--bronze);font-weight:750;letter-spacing:.08em;font-size:11px;text-transform:uppercase}
+a{color:#145e77}button,.btn{border:1px solid #c8c0b0;border-radius:9px;background:#fff;color:var(--ink);font:inherit;padding:10px 13px;cursor:pointer;text-decoration:none;display:inline-block}
+button:hover,.btn:hover{border-color:var(--bronze)}button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+button:disabled{opacity:.5;cursor:not-allowed}
+input,textarea,select{width:100%;border:1px solid #c8c0b0;border-radius:9px;background:#fff;color:var(--ink);font:inherit;padding:11px}
+textarea{resize:vertical;min-height:95px;line-height:1.5}label{display:block;font-size:12px;font-weight:700;margin:12px 0 5px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:13px;padding:18px;min-width:0}
+.alert{padding:11px 14px;background:#f5ead8;border:1px solid #dbc79f;border-radius:9px;line-height:1.5;margin-bottom:16px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stat .n{font-size:26px;font-weight:700}.stat .t{font-size:12px;color:var(--muted)}
+.columns{display:grid;grid-template-columns:360px 1fr;gap:15px;align-items:start}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.controls>*{flex:1}#mailText{min-height:160px}
+.list{display:flex;flex-direction:column;gap:8px;max-height:640px;overflow:auto;padding-right:2px;margin-top:12px}
+.item{text-align:left;width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.item.selected{border-color:var(--bronze);background:#faf3e9;box-shadow:inset 3px 0 var(--bronze)}
+.item .title{font-weight:650;margin-bottom:5px}.item .meta{color:var(--muted);font-size:12px;line-height:1.5}
+.pill{display:inline-block;border-radius:100px;padding:3px 8px;font-size:11px;font-weight:700;background:#edf0f2;color:#52616a;margin-top:7px}
+.pill.good{background:#e4f1e9;color:var(--green)}.pill.bad{background:#fbe8e6;color:var(--red)}.pill.warn{background:#fff0d8;color:#825217}
+#detail{min-height:430px}.detail-title{font-size:21px;line-height:1.35;font-weight:700;margin:7px 0}
+.detail-meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);margin-bottom:10px}
+.note{border-left:3px solid var(--bronze);background:#faf7f0;padding:10px 12px;margin:12px 0;font-size:13px;line-height:1.5}
+.message{padding:12px;background:#f5f7f8;border:1px solid #dce1e4;border-radius:9px;white-space:pre-wrap;line-height:1.5}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#toast{position:fixed;bottom:20px;right:20px;max-width:360px;background:#22303a;color:#fff;border-radius:9px;padding:12px 16px;display:none;z-index:5}
+.empty{text-align:center;color:var(--muted);padding:40px 14px;border:1px dashed var(--line);border-radius:10px}
+hr{border:0;border-top:1px solid var(--line);margin:20px 0}
+@media(max-width:860px){.columns{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.list{max-height:330px}}
+@media(max-width:450px){.split{grid-template-columns:1fr}header{align-items:flex-start}button,.btn{padding:9px 10px}}
+</style>
+</head>
+<body>
+<main>
+<header><div><div class="eyebrow">Emlak CRM / Deneme Modülü</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlan inceleme • Müşteri dönüşleri</div></div><div class="controls"><a class="btn" href="./index.html">← CRM'ye Dön</a><button id="speakBtn">🔊 Özeti Oku</button><button id="exportBtn">Yedek İndir</button></div></header>
+<div class="alert"><b>Gönderim yapılmaz.</b> Bu sürüm Gmail'e otomatik bağlanmaz ve sahibinden.com'a otomatik mesaj göndermez. E-posta içeriğini yapıştırıp ilanları içeri alabilir, açıklamayı inceleyebilir ve uygun mesajı kopyalayabilirsiniz. Satıcının iletişim istemediği ilanlar otomatik elenir.</div>
+<div class="stats">
+<div class="card stat"><div class="n" id="countAll">0</div><div class="t">Toplam farklı ilan</div></div>
+<div class="card stat"><div class="n" id="countPending">0</div><div class="t">Açıklama kontrolü bekleyen</div></div>
+<div class="card stat"><div class="n" id="countReady">0</div><div class="t">Mesajı hazır</div></div>
+<div class="card stat"><div class="n" id="countReply">0</div><div class="t">Manuel yanıt bekleyen</div></div>
+</div>
+<div class="columns">
+<section class="card">
+<h2>1. Sahibinden e-postasını ekle</h2><div class="small">Gmail'deki “Favori Arama için Sonuçlar” bildirim metnini seçip buraya yapıştırın. Aynı ilan numarası ikinci defa eklenmez.</div>
+<label for="mailText">E-posta içeriği</label><textarea id="mailText" placeholder="Favori Aramanız için Sonuçlar&#10;[İlan başlığı](https://pro.sahibinden.com/?return_url=https://www.sahibinden.com/ilan/...)&#10;#1234567890&#10;Fiyat: 4.100.000 TL"></textarea>
+<div class="controls" style="margin-top:9px"><button id="importBtn" class="primary">İlanları İçeri Al</button><button id="clearMailBtn">Metni Temizle</button></div>
+<hr>
+<h2>2. İlanları takip et</h2>
+<div class="controls"><input id="search" placeholder="Başlık veya ilan no ara" aria-label="İlan ara"><select id="filter" aria-label="Duruma göre filtre"><option value="all">Tüm durumlar</option><option value="review">Açıklama bekliyor</option><option value="ready">Mesaj hazır</option><option value="blocked">İletişim istemiyor</option><option value="manual">Manuel yanıt</option></select></div>
+<div id="list" class="list"></div>
+</section>
+<section class="card" id="detail"><div class="empty">Soldan bir ilan seçin veya favori arama e-postası ekleyin.</div></section>
+</div>
+<div class="small" style="margin-top:18px">Veriler yalnızca bu tarayıcıdaki yerel depolamada saklanır; başka cihazlarla senkronize edilmez. Çıkmadan önce “Yedek İndir” ile kayıtlarınızı koruyun. Bu uygulama sahibinden.com ile resmî bir entegrasyon değildir.</div>
+</main>
+<div id="toast" role="status"></div>
+<script>
+(function(){
+'use strict';
+const KEY='engin-crm-ilan-asistani-v1';
+const SALE='Merhabalar, ben Remax Manisa Ofisinden Engin BAYSAL, mülkünüzün satışına yönelik olarak bizimle çalışmak ister misiniz?';
+const RENT='Merhabalar, ben Remax Manisa Ofisinden Engin BAYSAL, mülkünüzün kiralanmasına yönelik olarak bizimle çalışmak ister misiniz?';
+const CLOSE='Rica ederim, anlayışınız için teşekkür ederim. Hayırlı müşteriler dilerim. İyi günler.';
+let rows=[],selected=null;
+const $=id=>document.getElementById(id);
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function normalize(s){return String(s||'').toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ı/g,'i').replace(/ş/g,'s').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ö/g,'o').replace(/ç/g,'c').replace(/\s+/g,' ').trim();}
+function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',3400);}
+function load(){try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');rows=Array.isArray(x)?x.filter(r=>r&&/^\d{8,12}$/.test(r.id)):[];}catch(e){rows=[];toast('Kayıtlar okunamadı. Yedeğiniz varsa koruyun.');}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(rows));}catch(e){toast('Yerel depolama dolu veya kapalı. Yedek alınız.');} render();}
+function targetUrl(link){
+  try{
+    let u=new URL(link);
+    if(u.hostname==='pro.sahibinden.com'){const returnUrl=u.searchParams.get('return_url');if(!returnUrl)return null;u=new URL(returnUrl);}
+    if(u.protocol!=='https:'||!['www.sahibinden.com','sahibinden.com'].includes(u.hostname)||!u.pathname.startsWith('/ilan/'))return null;
+    const m=u.pathname.match(/-(\d{8,12})(?:\/detay\/?)?$/);
+    return m?{url:u.origin+u.pathname,id:m[1],path:u.pathname}:null;
+  }catch(e){return null;}
+}
+function guessDeal(s){const x=normalize(s);if(/kiralik|kiralama|kiraya/.test(x))return 'kiralik';if(/satilik|satisa|satis/.test(x))return 'satilik';return 'belirsiz';}
+function importMail(body){
+ const links=[...body.matchAll(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g)];
+ let added=0,dup=0;
+ for(const match of links){
+   const target=targetUrl(match[2]);if(!target)continue;
+   if(rows.some(x=>x.id===target.id)){dup++;continue;}
+   const escapedId=target.id;
+   const found=body.match(new RegExp('#\\s*'+escapedId+'\\s*\\n+\\s*Fiyat:\\s*([^\\n]+)','i'));
+   const deal=guessDeal(target.path+' '+match[1]);
+   rows.unshift({id:target.id,title:match[1].trim(),url:target.url,price:found?found[1].trim():'Belirtilmemiş',type:deal,description:'',reply:'',status:'review',notice:'Açıklama henüz okunmadı.',createdAt:new Date().toISOString()});
+   added++;
+ }
+ save();if(added)selected=rows[0].id;render();toast(added+' ilan eklendi; '+dup+' tekrar atlandı.');return added;
+}
+function restricted(description){
+ const s=normalize(description);
+ const agent='(?:emlakci(?:lar|larla|larla|yla)?|emlak ofis(?:i|leri)|gayrimenkul danisman(?:i|lari)|danisman(?:lar)?|komisyoncu(?:lar)?|araci(?:lar)?)';
+ const block='(?:aramasin|aramayin|yazmasin|yazmayin|mesaj atmasin|mesaj atmayin|istemiyorum|istemiyoruz|calismiyorum|calismayacagim|calismiyoruz|iletisime gecmesin|irtibata gecmesin|rahatsiz etmesin|kabul etmiyorum|kabul etmiyoruz)';
+ return new RegExp(agent+'.{0,85}'+block).test(s)||new RegExp(block+'.{0,50}'+agent).test(s)||/emlakcilara kapali|emlakciya kapali|emlakci kesinlikle aramasin/.test(s);
+}
+function inspect(r){
+ if(!r.description.trim()){r.status='review';r.notice='Açıklama okunmadığı için güvenli karar verilemedi.';return;}
+ if(restricted(r.description)){r.status='blocked';r.notice='Emlakçı/danışman iletişimi istemeyen ifade tespit edildi. Mesaj hazırlanmaz.';return;}
+ if(r.type==='belirsiz'){r.status='review';r.notice='İlanın satılık veya kiralık olduğunu seçiniz.';return;}
+ r.status='ready';r.notice='Açıklamada tanımlı yasaklayıcı ifade görülmedi. Manuel son kontrol önerilir.';
+}
+function classify(reply){
+ const s=normalize(reply);
+ if(!s)return {status:'review',note:'Yanıt metni girilmedi.'};
+ if(/(?:bir daha|artik|lutfen).{0,35}(?:aramayin|yazmayin|mesaj atmayin|ulasmak istemiyorum|iletisime gecmeyin)|rahatsiz etmeyin|numarami silin|iletisim kurmayin/.test(s))
+  return {status:'blockedReply',note:'Açık iletişim yasağı: yanıt bile göndermeyin.'};
+ if(/bir sure kendim|kendim ilgilenecegim|ileride olabilir|daha sonra|simdilik|sonra goruselim|su an dusunmuyorum|biraz bekle/.test(s))
+  return {status:'manual',note:'Kararsız/ileriye dönük dönüş: manuel takip.'};
+ if(/olabilir|goruselim|gorusmek|komisyon|sartlariniz|nasil calisiyorsunuz|teklif|arayabilir|telefon|iletisime gec|uygun olabilir|konusalim|detay/.test(s))
+  return {status:'positive',note:'Olumlu veya ticari soru içeren dönüş: sizin manuel cevabınız bekleniyor.'};
+ if(/hayir|istemiyorum|gerek yok|ilgilenmiyorum|tesekkur|sag olun|calismak istemiyorum/.test(s))
+  return {status:'negative',note:'Olumsuz yanıt: nazik kapanış taslağı hazır; göndermeden önce kontrol edin.'};
+ return {status:'manual',note:'Anlamı kesin olmayan yanıt: manuel değerlendirme gerekli.'};
+}
+function label(r){
+ return {review:'Açıklama bekleniyor',ready:'Mesaj hazır',blocked:'İletişim istemiyor',sent:'İletişime geçildi',negative:'Olumsuz dönüş',manual:'Manuel değerlendirme',positive:'Olumlu dönüş',blockedReply:'Bir daha iletişim kurma'}[r.status]||r.status;
+}
+function cssStatus(s){return ['ready','positive'].includes(s)?'good':['blocked','blockedReply','negative'].includes(s)?'bad':'warn';}
+function render(){
+ $('countAll').textContent=rows.length;
+ $('countPending').textContent=rows.filter(r=>r.status==='review').length;
+ $('countReady').textContent=rows.filter(r=>r.status==='ready').length;
+ $('countReply').textContent=rows.filter(r=>['manual','positive'].includes(r.status)).length;
+ const q=normalize($('search').value),f=$('filter').value;
+ const a=rows.filter(r=>(!q||normalize(r.title+' '+r.id).includes(q))&&(f==='all'||(f==='manual'?['manual','positive'].includes(r.status):f==='blocked'?['blocked','blockedReply'].includes(r.status):r.status===f)));
+ $('list').innerHTML=a.length?a.map(r=>'<button type="button" class="item '+(r.id===selected?'selected':'')+'" data-id="'+r.id+'"><div class="title">'+escapeHtml(r.title)+'</div><div class="meta">#'+r.id+' • '+escapeHtml(r.price)+' • '+(r.type==='kiralik'?'Kiralık':r.type==='satilik'?'Satılık':'Tür belirsiz')+'</div><span class="pill '+cssStatus(r.status)+'">'+escapeHtml(label(r))+'</span></button>').join(''):'<div class="empty">Bu filtrede ilan bulunamadı.</div>';
+ $('list').querySelectorAll('[data-id]').forEach(el=>el.addEventListener('click',()=>{selected=el.dataset.id;render();}));
+ showDetail();
+}
+function showDetail(){
+ const r=rows.find(x=>x.id===selected);
+ if(!r){$('detail').innerHTML='<div class="empty">Soldan bir ilan seçin veya favori arama e-postası ekleyin.</div>';return;}
+ const typeName=r.type==='kiralik'?'Kiralık':r.type==='satilik'?'Satılık':'Belirsiz';
+ const text=r.type==='kiralik'?RENT:r.type==='satilik'?SALE:'Önce ilan türünü seçin.';
+ const canCopy=r.status==='ready' || r.status==='sent';
+ $('detail').innerHTML=
+ '<div class="eyebrow">İlan #'+r.id+'</div><div class="detail-title">'+escapeHtml(r.title)+'</div>'+
+ '<div class="detail-meta"><span>'+escapeHtml(r.price)+'</span><span>'+typeName+'</span><span class="pill '+cssStatus(r.status)+'">'+escapeHtml(label(r))+'</span></div>'+
+ '<div class="controls"><a class="btn" href="'+escapeHtml(r.url)+'" rel="noopener noreferrer" target="_blank">İlanı Aç</a><button id="reviewAgain">Kontrol Durumuna Al</button></div>'+
+ '<div class="note" id="notice">'+escapeHtml(r.notice||'Henüz incelenmedi.')+'</div>'+
+ '<label for="dealType">İlan türü</label><select id="dealType"><option value="satilik">Satılık</option><option value="kiralik">Kiralık</option><option value="belirsiz">Belirsiz</option></select>'+
+ '<label for="description">İlan açıklaması (ilan sayfasından kopyalayın)</label><textarea id="description" placeholder="İlanın tüm açıklaması...">'+escapeHtml(r.description)+'</textarea>'+
+ '<div class="controls" style="margin-top:9px"><button id="inspect" class="primary">Açıklamayı Kontrol Et</button></div>'+
+ '<hr><h2>İlan sahibine ilk mesaj</h2><div class="message">'+escapeHtml(text)+'</div>'+
+ '<div class="controls" style="margin-top:10px"><button id="copyInitial" '+(canCopy?'':'disabled')+'>Mesajı Kopyala</button><button id="markSent" '+(canCopy?'':'disabled')+'>Manuel Gönderildi İşaretle</button></div>'+
+ '<div class="small" style="margin-top:7px">Kopyalama hiçbir platformda otomatik gönderim yapmaz. İlan sahibinin açık rızası/iletişim tercihleri ve platform kuralları gözetilmelidir.</div>'+
+ '<hr><h2>İlan sahibinin cevabı</h2><label for="reply">Gelen yanıt</label><textarea id="reply" placeholder="Örn. Bir süre kendim ilgileneceğim.">'+escapeHtml(r.reply||'')+'</textarea>'+
+ '<div class="controls" style="margin-top:10px"><button id="classify" class="primary">Yanıtı Değerlendir</button><button id="copyClose" '+(r.status==='negative'?'':'disabled')+'>Nazik Kapanışı Kopyala</button></div>'+
+ '<div class="small" style="margin-top:8px">Olumlu/kararsız yanıtlarda otomatik dönüş yoktur. Kesin retlerde kapanış metni de yalnızca taslaktır.</div>';
+ $('dealType').value=r.type;
+ $('dealType').addEventListener('change',e=>{r.type=e.target.value;r.status='review';r.notice='İlan türü değişti; açıklamayı yeniden kontrol edin.';save();});
+ $('inspect').addEventListener('click',()=>{r.description=$('description').value;inspect(r);save();});
+ $('reviewAgain').addEventListener('click',()=>{r.status='review';r.notice='Yeniden inceleme için bekliyor.';save();});
+ $('copyInitial').addEventListener('click',()=>{if(!['ready','sent'].includes(r.status))return;copy(r.type==='kiralik'?RENT:SALE);});
+ $('markSent').addEventListener('click',()=>{if(!['ready','sent'].includes(r.status))return;r.status='sent';r.notice='Mesajın gönderildiği kullanıcı tarafından işaretlendi. Gönderim doğrulanmadı.';save();});
+ $('classify').addEventListener('click',()=>{r.reply=$('reply').value;const c=classify(r.reply);r.status=c.status;r.notice=c.note;save();if(c.status==='positive')toast('Olumlu dönüş! Manuel görüşme bekleniyor.');});
+ $('copyClose').addEventListener('click',()=>{if(r.status==='negative')copy(CLOSE);});
+}
+async function copy(s){try{await navigator.clipboard.writeText(s);toast('Mesaj kopyalandı.');}catch(e){toast('Tarayıcı kopyalamaya izin vermedi; metni seçip kopyalayın.');}}
+$('importBtn').addEventListener('click',()=>{const b=$('mailText').value.trim();if(!b){toast('E-posta metnini yapıştırın.');return;}const n=importMail(b);if(!n)toast('Yeni ilan bağlantısı bulunamadı veya hepsi daha önce eklenmiş.');});
+$('clearMailBtn').addEventListener('click',()=>$('mailText').value='');
+$('search').addEventListener('input',render);$('filter').addEventListener('change',render);
+$('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),listings:rows},null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download='ilan-asistani-yedek.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);});
+$('speakBtn').addEventListener('click',()=>{if(!('speechSynthesis' in window)){toast('Bu tarayıcı seslendirmeyi desteklemiyor.');return;}speechSynthesis.cancel();const msg='Toplam '+rows.length+' farklı ilan var. '+rows.filter(r=>r.status==='review').length+' ilan açıklama kontrolü bekliyor. '+rows.filter(r=>r.status==='ready').length+' ilan için mesaj hazır. '+rows.filter(r=>['positive','manual'].includes(r.status)).length+' müşteri dönüşü sizin yanıtınızı bekliyor.';const u=new SpeechSynthesisUtterance(msg);u.lang='tr-TR';speechSynthesis.speak(u);});
+load();render();
+})();
+</script></body></html>
