@@ -51,7 +51,9 @@ hr{border:0;border-top:1px solid var(--line);margin:20px 0}
 </div>
 <div class="columns">
 <section class="card">
-<h2>1. Sahibinden e-postasını ekle</h2><div class="small">Gmail adresini yazmak bağlantı kurmaz. Bugünkü ilanları ChatGPT'den aldığınız JSON dosyasını aşağıdan yükleyin. Aynı ilan numarası ikinci defa eklenmez.</div>
+<h2>1. Yeni ilanlar</h2><div class="small">Favori aramalarınızın ilan listesi bu sayfa açıldığında otomatik güncellenir. Yeni ilanlar eklenir; müşteri görüşme durumlarınız korunur.</div>
+<div class="note" id="feedStatus" role="status">İlan kaynağı kontrol ediliyor...</div>
+<button id="refreshFeedBtn" class="primary" type="button">↻ Şimdi Yenile</button><hr><h2>Yedek dosyadan ekle (isteğe bağlı)</h2><div class="small">Normal kullanımda dosya yüklemeniz gerekmez. Yalnızca otomatik bağlantı çalışmadığında kullanın.</div>
 <label for="importFile">İlan dosyası (.json)</label><input id="importFile" type="file" accept=".json,.txt,.eml,application/json,text/plain"><div class="controls" style="margin-top:9px"><button id="importFileBtn" class="primary">İlan Dosyasını Yükle</button></div><div class="note">Dosyayı ChatGPT üzerinden indirip buradan seçebilirsiniz. İlanlar türüne göre mesaj hazırlama kuyruğuna eklenir; sahibinden.com'a otomatik gönderim yapılmaz.</div><hr><h2>Alternatif: E-posta metni yapıştır</h2><div class="small">Yalnızca e-posta adresi değil, <b>ilan bağlantılarını içeren tam bildirim metni</b> gerekir.</div><label for="mailText">Favori arama bildirim metni</label><textarea id="mailText" placeholder="Favori Aramanız için Sonuçlar&#10;[İlan başlığı](https://pro.sahibinden.com/?return_url=https://www.sahibinden.com/ilan/...)&#10;#1234567890&#10;Fiyat: 4.100.000 TL"></textarea>
 <div class="controls" style="margin-top:9px"><button id="importBtn" class="primary">İlanları İçeri Al</button><button id="clearMailBtn">Metni Temizle</button></div>
 <hr>
@@ -103,7 +105,7 @@ function importMail(body){
  save();if(added)selected=rows[0].id;render();toast(added+' ilan eklendi; '+dup+' tekrar atlandı.');return added;
 }
 function agencyAdvertiser(title){const s=normalize(title);return /(?:emlaktan|emlak ofisinden|gayrimenkul ofisinden|emlakci araciligiyla|(?:remax|remaks|coldwell banker|kw gayrimenkul)\b)/.test(s);}
-function importData(data){
+function importData(data,silent=false){
  const input=Array.isArray(data)?data:data&&Array.isArray(data.listings)?data.listings:null;
  if(!input)throw new Error('Dosya ilan listesi içermiyor.');
  if(input.length>2000)throw new Error('Dosyada çok fazla ilan var.');
@@ -111,16 +113,22 @@ function importData(data){
  for(const entry of input){
    const target=entry&&typeof entry.url==='string'?targetUrl(entry.url):null;
    if(!target||entry.id&&String(entry.id)!==target.id){invalid++;continue;}
-   if(rows.some(r=>r.id===target.id)){duplicates++;continue;}
+   const existing=rows.find(r=>r.id===target.id);
+   if(existing){
+     duplicates++;
+     const newPrice=String(entry.price||'').slice(0,100);
+     if(newPrice && newPrice!=='Belirtilmemiş' && existing.price!==newPrice)existing.price=newPrice;
+     continue;
+   }
    const title=String(entry.title||'Başlıksız ilan').slice(0,260);
    const type=['satilik','kiralik'].includes(entry.type)?entry.type:guessDeal(target.path+' '+title);
    const row={id:target.id,title,url:target.url,price:String(entry.price||'Belirtilmemiş').slice(0,100),type,description:'',reply:'',status:type==='belirsiz'?'review':'ready',notice:type==='belirsiz'?'Satılık/kiralık türü seçilmeli.':'E-postadan alındı. Mesaj hazır; açıklama incelenmedi.',createdAt:new Date().toISOString()};
    if(agencyAdvertiser(title)){row.status='blocked';row.notice='Başlık emlak ofisi ilanına işaret ediyor. İletişime geçmeyin.';}
    rows.unshift(row);added++;
  }
- if(added)selected=rows[0].id;
+ if(added && !selected)selected=rows[0].id;
  save();
- toast(added+' yeni ilan eklendi, '+duplicates+' tekrar atlandı, '+invalid+' geçersiz bağlantı.');
+ if(!silent)toast(added+' yeni ilan eklendi, '+duplicates+' tekrar atlandı, '+invalid+' geçersiz bağlantı.');
  return added;
 }
 function prepare(r){
@@ -220,9 +228,33 @@ async function copy(s,button){
 $('importBtn').addEventListener('click',()=>{const b=$('mailText').value.trim();if(!b){toast('E-posta metnini yapıştırın.');return;}if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b)){toast('Yalnızca e-posta adresi değil, bildirim içeriği veya ilan dosyası gerekli.');return;}const n=importMail(b);if(!n)toast('İlan bağlantısı bulunamadı; lütfen ilan dosyasını yükleyin.');});
 $('importFileBtn').addEventListener('click',async()=>{const f=$('importFile').files&&$('importFile').files[0];if(!f){toast('Önce indirilen dosyayı seçin.');return;}if(f.size>2000000){toast('Dosya 2 MB sınırını aşıyor.');return;}try{const body=await f.text();if(f.name.toLowerCase().endsWith('.json'))importData(JSON.parse(body));else{const n=importMail(body);if(!n)toast('Bu dosyada tanınan ilan bağlantısı yok.');}}catch(e){toast('Dosya okunamadı: '+String(e.message||e));}});
 $('clearMailBtn').addEventListener('click',()=>$('mailText').value='');
+let syncingFeed=false;
+async function refreshFeed(){
+ if(syncingFeed)return;
+ syncingFeed=true;
+ $('refreshFeedBtn').disabled=true;
+ $('feedStatus').textContent='Güncel favori ilanları kontrol ediliyor...';
+ try{
+   const res=await fetch('./data/favori-ilanlar.json?v='+Date.now(),{cache:'no-store'});
+   if(!res.ok)throw new Error('HTTP '+res.status);
+   const data=await res.json();
+   if(data.schemaVersion!==1||!Array.isArray(data.listings))throw new Error('Geçersiz ilan listesi');
+   const added=importData(data,true);
+   const last=data.lastEmailAt?new Date(data.lastEmailAt).toLocaleString('tr-TR'):'bilinmiyor';
+   $('feedStatus').textContent='✓ Kaynaktaki '+data.listings.length+' ilan kontrol edildi. '+added+' yeni ilan eklendi. Son aktarılan e-posta: '+last+'.';
+ }catch(e){
+   console.warn('Automatic listing feed unavailable',e);
+   $('feedStatus').textContent='Otomatik ilan kaynağına ulaşılamadı ('+String(e.message||e)+'). Önceden kaydedilmiş ilanlar duruyor; sonra tekrar deneyin.';
+ }finally{
+   syncingFeed=false;
+   $('refreshFeedBtn').disabled=false;
+ }
+}
+$('refreshFeedBtn').addEventListener('click',refreshFeed);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshFeed();});
 $('search').addEventListener('input',render);$('filter').addEventListener('change',render);
 $('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),listings:rows},null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download='ilan-asistani-yedek.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);});
 $('speakBtn').addEventListener('click',()=>{if(!('speechSynthesis' in window)){toast('Bu tarayıcı seslendirmeyi desteklemiyor.');return;}speechSynthesis.cancel();const msg='Toplam '+rows.length+' farklı ilan var. '+rows.filter(r=>r.status==='review').length+' ilan türü belirsiz. '+rows.filter(r=>r.status==='ready').length+' ilan için mesaj hazır. '+rows.filter(r=>['positive','manual'].includes(r.status)).length+' müşteri dönüşü sizin yanıtınızı bekliyor.';const u=new SpeechSynthesisUtterance(msg);u.lang='tr-TR';speechSynthesis.speak(u);});
-load();render();
+load();render();refreshFeed();
 })();
 </script></body></html>
