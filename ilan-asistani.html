@@ -76,46 +76,78 @@ body.modal-open{overflow:hidden}
 @media(max-width:980px){.list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){main{padding:14px 12px 45px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.workspace{padding:14px}.filter-bar{grid-template-columns:1fr 1fr}.filter-bar input{grid-column:1/-1}.list{grid-template-columns:repeat(2,minmax(0,1fr))}.item{min-height:178px}.detail-shell{width:100vw}}
 @media(max-width:480px){.list{grid-template-columns:1fr}.stat{gap:8px;padding:11px}.stat .n{font-size:23px}.page-head .controls{width:100%}.page-head .controls>*{flex:1}.item{min-height:155px}.feed-bar{align-items:flex-start}.filter-bar{grid-template-columns:1fr 1fr}.filter-bar select{font-size:12px}}
+
+/* Sade ilan listesi: tek filtre başlığı ve açıklamalı alanlar. */
+main{max-width:1200px}
+.alert{margin:0 0 10px;padding:10px 13px}
+.feed-bar{margin-bottom:10px;padding:10px 14px}
+.summary-line{display:flex;gap:16px;flex-wrap:wrap;padding:0 2px;margin:12px 0 13px;color:var(--muted);font-size:12px}
+.summary-line span+span{border-left:1px solid #d3d6d3;padding-left:16px}
+.summary-line b{color:var(--ink);font-size:15px}
+.workspace{padding:18px}
+.workspace-header{margin-bottom:14px;align-items:center}
+.workspace-header h2{font-size:20px;margin:0 0 3px}
+.workspace-header p{margin:0}
+.result-count{font-size:13px;color:#47636e;white-space:nowrap}
+.filters{padding:14px 15px 17px;background:#f8f9f8;border:1px solid #e2e5e4;border-radius:11px;margin-bottom:18px}
+.filters-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}
+.filters-heading h3{font-size:14px;margin:0;color:#253f50}
+.reset-btn{font-size:12px;padding:6px 9px;background:#fff}
+.filter-fields{display:grid;grid-template-columns:1.6fr repeat(4,minmax(0,1fr));gap:11px;align-items:end}
+.filter-fields .field{min-width:0}
+.filter-fields label{margin:0 0 6px;color:#3d5260;font-size:12px;font-weight:750}
+.filter-fields select,.filter-fields input{height:40px;padding:8px 10px;font-size:13px}
+.list{display:flex;flex-direction:column;gap:0}
+.listing-head{display:grid;grid-template-columns:minmax(0,3.2fr) minmax(90px,.9fr) minmax(130px,1.15fr) minmax(120px,1.2fr);padding:0 15px 9px;gap:15px;color:#687783;font-size:10px;font-weight:800;letter-spacing:.04em;border-bottom:1px solid #e6e9e8}
+.list .item{display:grid;grid-template-columns:minmax(0,3.2fr) minmax(90px,.9fr) minmax(130px,1.15fr) minmax(120px,1.2fr);gap:15px;align-items:center;min-height:72px;padding:12px 15px;border:0;border-bottom:1px solid #edf0ef;border-radius:0;box-shadow:none;transform:none;background:white}
+.list .item:last-child{border-bottom:0}
+.list .item:hover{background:#f5f8f7;box-shadow:none;transform:none}
+.item .title{font-size:14px;line-height:1.4;display:block;white-space:normal;overflow-wrap:anywhere}
+.list .item .price{font-size:15px;letter-spacing:0}
+.list .item .meta{font-size:11px;margin-top:4px}
+.list .item .pill{white-space:normal;text-align:center;font-size:10px;max-width:100%;line-height:1.25}
+.list .item .type-text{font-size:12px;font-weight:650;color:#526876}
+.list .item .view{color:#246b80;font-size:12px;margin-top:4px;font-weight:700}
+.list .item .status-cell{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+@media(max-width:1050px){.filter-fields{grid-template-columns:repeat(3,minmax(0,1fr))}.field-search{grid-column:span 2}}
+@media(max-width:700px){.filter-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.field-search{grid-column:1/-1}.listing-head{display:none}.list .item{grid-template-columns:minmax(0,1fr) auto;gap:8px;min-height:85px;padding:13px 5px}.list .item .type-cell{grid-row:2;grid-column:1}.list .item .price-cell{grid-row:1;grid-column:2;text-align:right}.list .item .status-cell{grid-row:2;grid-column:2;align-items:flex-end}.list .item .title{font-size:14px}.list .item .price{font-size:15px}}
+@media(max-width:460px){.summary-line{gap:7px 11px}.summary-line span+span{padding-left:9px}.filters{padding:12px}.workspace{padding:12px}.filters-heading h3{font-size:13px}.filter-fields{gap:10px}.filter-fields select{font-size:12px}.feed-bar strong{font-size:12px}}
 </style>
 </head>
 <body>
 <main>
-<header class="page-head"><div><div class="eyebrow">Emlak CRM / İlan Asistanı</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlan inceleme • Müşteri dönüşleri</div></div><div class="controls"><a class="btn" href="./index.html">← CRM'ye Dön</a><button id="speakBtn">🔊 Özeti Oku</button><button id="exportBtn">Yedek İndir</button></div></header>
-<div class="alert"><b>İlan Asistanı:</b> Favori aramalardan gelen ilanları kategorilere ayırıp hızlıca inceleyebilirsiniz. İlan kartına tıklayıp satış veya kiralama mesajını kopyalayın. <b>Mesajlar otomatik gönderilmez.</b> İlan açıklamasını siz kontrol edeceksiniz; iletişim istemeyen mülk sahiplerine mesaj göndermeyin.</div>
+<header class="page-head"><div><div class="eyebrow">Emlak CRM / İlan Asistanı</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlan inceleme • Müşteri dönüşleri</div></div><div class="controls"><a class="btn" href="./index.html">← CRM'ye Dön</a></div></header>
+
 <div class="feed-bar"><div><strong>Favori ilanlar • Otomatik senkronizasyon</strong><div id="feedStatus" role="status">Güncel ilanlar kontrol ediliyor...</div></div><button id="refreshFeedBtn" class="primary" type="button">↻ Yenile</button></div>
-<div class="stats">
-<div class="card stat"><div class="n" id="countAll">0</div><div class="t">Toplam ilan</div></div>
-<div class="card stat"><div class="n" id="countPending">0</div><div class="t">Türü belirsiz</div></div>
-<div class="card stat"><div class="n" id="countReady">0</div><div class="t">Mesajı hazır</div></div>
-<div class="card stat"><div class="n" id="countReply">0</div><div class="t">Yanıt bekleyen</div></div>
+<div class="summary-line" aria-label="İlan özeti">
+ <span><b id="countAll">0</b> toplam ilan</span><span><b id="countReady">0</b> mesaj hazır</span><span><b id="countReply">0</b> manuel yanıt</span><span><b id="countPending">0</b> türü belirsiz</span>
 </div>
-<section class="card workspace" aria-label="Favori ilanlar">
- <div class="workspace-header"><div><h2>İlanlarım</h2><div class="small">Bir kategori seçin, ilan kartına dokunarak mesaj ve görüşme bilgilerini açın.</div></div><div id="resultCount" class="small" aria-live="polite">0 ilan gösteriliyor</div></div>
- <div class="tab-strip" id="categoryTabs" aria-label="İlan kategorileri" role="group">
-  <button type="button" class="active" data-category="all" aria-pressed="true">Tümü <span class="tab-count" id="tabAll">0</span></button>
-  <button type="button" data-category="satilik" aria-pressed="false">Satılık <span class="tab-count" id="tabSale">0</span></button>
-  <button type="button" data-category="kiralik" aria-pressed="false">Kiralık <span class="tab-count" id="tabRent">0</span></button>
-  <button type="button" data-category="ticari" aria-pressed="false">Ticari <span class="tab-count" id="tabCommercial">0</span></button>
-  <button type="button" data-category="konut" aria-pressed="false">Konut <span class="tab-count" id="tabHome">0</span></button>
+<section class="card workspace" aria-label="Favori ilan listesi">
+ <div class="workspace-header"><div><h2>Favori İlanlarım</h2><p class="small">İlanları filtreleyin; incelemek istediğiniz satıra tıklayın.</p></div><strong id="resultCount" class="result-count" aria-live="polite">0 ilan</strong></div>
+ <div class="filters" aria-label="İlan filtreleri">
+  <div class="filters-heading"><h3>İlan Filtreleri</h3><button type="button" id="resetFilters" class="reset-btn">Filtreleri Temizle</button></div>
+  <div class="filter-fields">
+   <div class="field field-search"><label for="search">İlan Ara</label><input type="search" id="search" placeholder="İlan başlığı veya numarası"></div>
+   <div class="field"><label for="dealFilter">İlan Türü</label><select id="dealFilter">
+    <option value="all">Tümü</option><option value="satilik">Satılık</option><option value="kiralik">Kiralık</option><option value="belirsiz">Belirsiz</option></select></div>
+   <div class="field"><label for="propertyFilter">Gayrimenkul Türü</label><select id="propertyFilter">
+    <option value="all">Tümü</option><option value="konut">Konut</option><option value="ticari">Ticari</option><option value="diger">Diğer</option></select></div>
+   <div class="field"><label for="filter">Görüşme Durumu</label><select id="filter">
+    <option value="all">Tümü</option><option value="ready">Mesaj hazır</option><option value="sent">Mesaj gönderildi</option>
+    <option value="manual">Manuel yanıt bekliyor</option><option value="negative">Olumsuz dönüş</option>
+    <option value="blocked">İletişim yok / engelli</option><option value="review">Türü belirsiz</option></select></div>
+   <div class="field"><label for="sort">Sıralama</label><select id="sort">
+    <option value="id-desc">İlan no: büyükten küçüğe</option><option value="price-asc">Fiyat: düşükten yükseğe</option>
+    <option value="price-desc">Fiyat: yüksekten düşüğe</option><option value="name">Başlık: A–Z</option></select></div>
+  </div>
  </div>
- <div class="filter-bar">
-  <input type="search" id="search" placeholder="İlan adı, konum veya ilan no ara..." aria-label="İlan ara">
-  <select id="filter" aria-label="Görüşme durumuna göre filtre">
-   <option value="all">Tüm görüşme durumları</option><option value="ready">Mesaj hazır</option>
-   <option value="sent">Mesaj gönderildi</option><option value="manual">Manuel cevap bekliyor</option>
-   <option value="negative">Olumsuz</option><option value="blocked">İletişim yok / engelli</option><option value="review">Türü belirsiz</option>
-  </select>
-  <select id="sort" aria-label="İlanları sırala">
-   <option value="id-desc">İlan no: yeni → eski</option>
-   <option value="price-asc">Fiyat: düşük → yüksek</option>
-   <option value="price-desc">Fiyat: yüksek → düşük</option>
-   <option value="name">Başlık: A → Z</option>
-  </select>
- </div>
+ <div class="listing-head" aria-hidden="true"><span>İLAN BİLGİSİ</span><span>İLAN TÜRÜ</span><span>FİYAT</span><span>GÖRÜŞME</span></div>
  <div id="list" class="list" aria-live="polite"></div>
 </section>
-<details class="data-tools"><summary>Yedek dosyadan veya e-postadan manuel ilan ekle (isteğe bağlı)</summary>
+<details class="data-tools"><summary>Diğer İşlemler (yedekleme, sesli özet, dosyadan ekleme)</summary>
  <div class="data-tools-content">
+  <p class="small">Mesajlar otomatik gönderilmez. İlan açıklamasını kontrol edin ve emlakçıyla iletişim istemeyen kişilere yazmayın.</p>
+  <div class="controls" style="margin:10px 0"><button type="button" id="speakBtn">🔊 Özeti Oku</button><button type="button" id="exportBtn">Yedek İndir</button></div>
   <p class="small">Normal kullanımda dosya yüklemeniz gerekmez. Otomatik aktarım çalışmadığında kullanabilirsiniz.</p>
   <label for="importFile">İlan dosyası (.json, .txt, .eml)</label>
   <input id="importFile" type="file" accept=".json,.txt,.eml,application/json,text/plain">
@@ -221,7 +253,7 @@ function label(r){
  return {review:'Türü belirsiz',ready:'Mesaj hazır',blocked:'İletişim istemiyor',sent:'İletişime geçildi',negative:'Olumsuz dönüş',manual:'Manuel değerlendirme',positive:'Olumlu dönüş',blockedReply:'Bir daha iletişim kurma'}[r.status]||r.status;
 }
 function cssStatus(s){return ['ready','positive'].includes(s)?'good':['blocked','blockedReply','negative'].includes(s)?'bad':'warn';}
-let category='all', detailOpen=false, focusReturn=null;
+let detailOpen=false, focusReturn=null;
 function kind(r){return r.url.includes('/emlak-is-yeri-')?'ticari':r.url.includes('/emlak-konut-')?'konut':'diger';}
 function numericPrice(r){const digits=String(r.price||'').replace(/[^\d]/g,'');return digits?Number(digits):Number.POSITIVE_INFINITY;}
 function inCategory(r,c){return c==='all'||c==='satilik'&&r.type==='satilik'||c==='kiralik'&&r.type==='kiralik'||c==='ticari'&&kind(r)==='ticari'||c==='konut'&&kind(r)==='konut';}
@@ -243,26 +275,21 @@ function render(){
  $('countPending').textContent=rows.filter(r=>r.status==='review').length;
  $('countReady').textContent=rows.filter(r=>r.status==='ready').length;
  $('countReply').textContent=rows.filter(r=>['manual','positive'].includes(r.status)).length;
- for(const [id,c] of [['tabAll','all'],['tabSale','satilik'],['tabRent','kiralik'],['tabCommercial','ticari'],['tabHome','konut']]){$(id).textContent=rows.filter(r=>inCategory(r,c)).length;}
- $('categoryTabs').querySelectorAll('[data-category]').forEach(btn=>{
-   const active=btn.dataset.category===category;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',active?'true':'false');
- });
- const q=normalize($('search').value),f=$('filter').value,sort=$('sort').value;
- const a=rows.filter(r=>inCategory(r,category)&&inStatus(r,f)&&(!q||normalize([r.title,r.id,r.price,r.type].join(' ')).includes(q)));
+ const q=normalize($('search').value),deal=$('dealFilter').value,property=$('propertyFilter').value,f=$('filter').value,sort=$('sort').value;
+ const a=rows.filter(r=>(deal==='all'||r.type===deal)&&(property==='all'||kind(r)===property)&&inStatus(r,f)&&(!q||normalize([r.title,r.id,r.price,r.type].join(' ')).includes(q)));
  if(sort==='price-asc')a.sort((x,y)=>numericPrice(x)-numericPrice(y));
  else if(sort==='price-desc')a.sort((x,y)=>numericPrice(y)-numericPrice(x));
  else if(sort==='name')a.sort((x,y)=>x.title.localeCompare(y.title,'tr'));
  else a.sort((x,y)=>Number(y.id)-Number(x.id));
- $('resultCount').textContent=a.length+' ilan gösteriliyor';
+ $('resultCount').textContent=a.length+' / '+rows.length+' ilan';
  $('list').innerHTML=a.length?a.map(r=>{
-   const property=kind(r)==='ticari'?'Ticari gayrimenkul':kind(r)==='konut'?'Konut':'Gayrimenkul';
-   const glyph=kind(r)==='ticari'?'▦':'⌂';
-   const t=r.type==='kiralik'?'Kiralık':r.type==='satilik'?'Satılık':'Tür belirsiz';
+   const t=r.type==='kiralik'?'Kiralık':r.type==='satilik'?'Satılık':'Belirsiz';
    return '<button type="button" class="item" data-id="'+r.id+'" aria-label="'+escapeHtml(r.title)+' ilanını incele">'+
-    '<div><div class="item-top"><span class="property-kind">'+glyph+' '+property+' · '+t+'</span><span class="pill '+cssStatus(r.status)+'">'+escapeHtml(label(r))+'</span></div>'+
-    '<div class="title" style="margin-top:13px">'+escapeHtml(r.title)+'</div></div>'+
-    '<div><div class="price">'+escapeHtml(r.price)+'</div><div class="item-bottom"><span class="meta">İlan #'+r.id+'</span><span class="view">İncele ›</span></div></div></button>';
- }).join(''):'<div class="empty">Bu seçimde ilan bulunamadı. Üstteki kategoriyi veya filtreleri değiştirebilirsiniz.</div>';
+   '<span class="name-cell"><span class="title">'+escapeHtml(r.title)+'</span><span class="meta">İlan No: '+r.id+'</span></span>'+
+   '<span class="type-cell"><span class="type-text">'+t+' · '+(kind(r)==='ticari'?'Ticari':kind(r)==='konut'?'Konut':'Diğer')+'</span></span>'+
+   '<span class="price-cell"><span class="price">'+escapeHtml(r.price)+'</span></span>'+
+   '<span class="status-cell"><span class="pill '+cssStatus(r.status)+'">'+escapeHtml(label(r))+'</span><span class="view">İncele ›</span></span></button>';
+ }).join(''):'<div class="empty">Bu filtrelere uygun ilan yok. “Filtreleri Temizle” seçeneğini kullanabilirsiniz.</div>';
  $('list').querySelectorAll('[data-id]').forEach(btn=>btn.addEventListener('click',()=>openDetails(btn.dataset.id,btn)));
  if(detailOpen)showDetail();
 }
@@ -354,8 +381,11 @@ async function refreshFeed(){
 }
 $('refreshFeedBtn').addEventListener('click',refreshFeed);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshFeed();});
-$('search').addEventListener('input',render);$('filter').addEventListener('change',render);$('sort').addEventListener('change',render);
-$('categoryTabs').addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(!b)return;category=b.dataset.category;render();});
+$('search').addEventListener('input',render);
+for(const id of ['dealFilter','propertyFilter','filter','sort'])$(id).addEventListener('change',render);
+$('resetFilters').addEventListener('click',()=>{
+ $('search').value='';$('dealFilter').value='all';$('propertyFilter').value='all';$('filter').value='all';$('sort').value='id-desc';render();
+});
 $('closeDetails').addEventListener('click',closeDetails);
 $('detailBackdrop').addEventListener('click',e=>{if(e.target===$('detailBackdrop'))closeDetails();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&detailOpen)closeDetails();});
