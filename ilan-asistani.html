@@ -119,10 +119,23 @@ main{max-width:1200px}
 </style>
 </head>
 <body>
-<main>
-<header class="page-head"><div><div class="eyebrow">Emlak CRM / İlan Asistanı</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlan inceleme • Müşteri dönüşleri</div></div><div class="controls"><a class="btn" href="./index.html">← CRM'ye Dön</a></div></header>
+<section id="authGate" class="card" style="max-width:540px;margin:10vh auto 30px;padding:26px">
+ <div class="eyebrow">EmlakCep / Kişiye Özel</div>
+ <h1>Favori İlanlara Giriş</h1>
+ <p class="small">Favori arama ve ilanlarınız sadece hesabınızla görüntülenir. E-posta adresinizle giriş yapın.</p>
+ <label for="authEmail">Hesap e-posta adresi</label>
+ <input type="email" id="authEmail" autocomplete="email" placeholder="E-posta adresiniz">
+ <label for="authPassword">Şifre (varsa)</label>
+ <input type="password" id="authPassword" autocomplete="current-password" placeholder="Hesap şifreniz">
+ <div class="controls" style="margin-top:12px"><button id="passwordLogin" type="button" class="primary">Şifreyle Giriş</button><button id="magicLogin" type="button">E-postayla Giriş Bağlantısı</button></div>
+ <label for="authCode">E-postanızda 6 haneli kod geldiyse</label>
+ <div class="controls"><input type="text" id="authCode" inputmode="numeric" autocomplete="one-time-code" placeholder="Giriş kodu"><button id="verifyCode" type="button">Kodu Doğrula</button></div>
+ <p id="authStatus" role="status" class="small" style="margin-top:12px">Giriş yapmadan özel ilanlar görüntülenmez.</p>
+</section>
+<main id="privateMain" hidden>
+<header class="page-head"><div><div class="eyebrow">Emlak CRM / İlan Asistanı</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlan inceleme • Müşteri dönüşleri</div></div><div class="controls"><a class="btn" href="./index.html">← CRM'ye Dön</a><button type="button" id="logoutBtn">Oturumu Kapat</button></div></header>
 
-<div class="feed-bar"><div><strong>Favori ilanlar • Otomatik senkronizasyon</strong><div id="feedStatus" role="status">Güncel ilanlar kontrol ediliyor...</div></div><button id="refreshFeedBtn" class="primary" type="button">↻ Yenile</button></div>
+<div class="feed-bar"><div><strong>Kişiye özel favori ilanlar • Otomatik senkronizasyon</strong><div id="feedStatus" role="status">Güncel ilanlar kontrol ediliyor...</div></div><button id="refreshFeedBtn" class="primary" type="button">↻ Yenile</button></div>
 <div class="summary-line" aria-label="İlan özeti">
  <span><b id="countAll">0</b> toplam ilan</span><span><b id="countReady">0</b> mesaj hazır</span><span><b id="countReply">0</b> manuel yanıt</span><span><b id="countPending">0</b> türü belirsiz</span>
 </div>
@@ -164,7 +177,7 @@ main{max-width:1200px}
   <div class="controls" style="margin-top:9px"><button id="importBtn" class="primary">İlanları İçeri Al</button><button id="clearMailBtn">Metni Temizle</button></div>
  </div>
 </details>
-<div class="small" style="margin-top:16px">İlanlar ortak dosyadan yenilenir. Mesaj ve görüşme kayıtları bu tarayıcının yerel depolamasında tutulur; farklı cihazlara kendiliğinden aktarılmaz. Sahibinden.com'a otomatik mesaj gönderilmez.</div>
+<div class="small" style="margin-top:16px">İlanlar hesabınıza özel veritabanından alınır. Mesaj ve görüşme durumları bu kullanıcı için yalnızca bu tarayıcıda saklanır; diğer cihazlara otomatik aktarılmaz. Sahibinden.com'a otomatik mesaj gönderilmez.</div>
 </main>
 <div id="detailBackdrop" hidden>
  <section class="detail-shell" role="dialog" aria-modal="true" aria-label="İlan detayları">
@@ -177,6 +190,100 @@ main{max-width:1200px}
 (function(){
 'use strict';
 const KEY='engin-crm-ilan-asistani-v1';
+const LEGACY_OWNER_ID='dd1c8258-2d3b-4428-aebd-5e2b9cda97ec';
+const SESSION_KEY='engin-crm-private-session-v1';
+const API_BASE='https://jcjerwvibjetomqeelsy.supabase.co';
+const API_KEY='sb_publishable_tz0ZMLExOcLCDnGudSnS6A_ko8TD4Ig';
+let privateSession=null,currentUser=null;
+const keyFor=(key)=>currentUser?key+'-user-'+currentUser.id:null;
+async function apiCall(path,options={}){
+ const headers={apikey:API_KEY,'Content-Type':'application/json',...(options.headers||{})};
+ if(privateSession?.access_token)headers.Authorization='Bearer '+privateSession.access_token;
+ return fetch(API_BASE+path,{...options,headers,cache:'no-store'});
+}
+async function checkUser(){
+ if(!privateSession?.access_token)return null;
+ let res=await apiCall('/auth/v1/user');
+ if(!res.ok && privateSession?.refresh_token){
+   const r=await apiCall('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:privateSession.refresh_token})});
+   if(r.ok){privateSession=await r.json();localStorage.setItem(SESSION_KEY,JSON.stringify(privateSession));res=await apiCall('/auth/v1/user');}
+ }
+ return res.ok?res.json():null;
+}
+function transferLegacyData(){
+ if(currentUser?.id!==LEGACY_OWNER_ID)return;
+ for(const key of [KEY,SEARCH_KEY]){
+   const source=localStorage.getItem(key),target=keyFor(key);
+   if(source&&!localStorage.getItem(target)){
+     localStorage.setItem(target,source);
+   }
+ }
+ // Do not silently delete legacy data before the user can verify the migration.
+}
+async function enterPrivate(){
+ const user=await checkUser();
+ if(!user){privateSession=null;localStorage.removeItem(SESSION_KEY);$('authStatus').textContent='Oturum doğrulanamadı. Giriş yapın.';return false;}
+ currentUser=user;transferLegacyData();
+ rows=[];searchLabels={};load();fillSearchFilter();
+ $('authGate').hidden=true;$('privateMain').hidden=false;
+ render();await refreshFeed();return true;
+}
+function reportAuth(s){$('authStatus').textContent=s;}
+async function signInPassword(){
+ const email=$('authEmail').value.trim(),password=$('authPassword').value;
+ if(!email||!password){reportAuth('E-posta ve şifre girin. Şifreniz yoksa e-posta bağlantısını kullanın.');return;}
+ reportAuth('Giriş doğrulanıyor...');
+ try{
+  const res=await apiCall('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});
+  const data=await res.json();
+  if(!res.ok)throw new Error(data.msg||data.error_description||data.message||'Giriş yapılamadı.');
+  privateSession=data;localStorage.setItem(SESSION_KEY,JSON.stringify(privateSession));
+  await enterPrivate();
+ }catch(e){reportAuth('Giriş başarısız: '+String(e.message||e));}
+}
+async function sendSignInLink(){
+ const email=$('authEmail').value.trim();
+ if(!email){reportAuth('Önce hesabınızın e-posta adresini yazın.');return;}
+ reportAuth('Giriş bağlantısı isteniyor...');
+ try{
+  const redirect=location.origin+location.pathname;
+  const res=await apiCall('/auth/v1/otp?redirect_to='+encodeURIComponent(redirect),{method:'POST',body:JSON.stringify({email,create_user:false})});
+  if(!res.ok){const data=await res.json();throw new Error(data.msg||data.message||data.error_description||'İşlem başarısız');}
+  reportAuth('E-posta hesabınızı kontrol edin. Bağlantıya tıklayın veya gelen kodu buraya girin.');
+ }catch(e){reportAuth('Giriş bağlantısı gönderilemedi: '+String(e.message||e));}
+}
+async function verifyEmailCode(){
+ const email=$('authEmail').value.trim(),token=$('authCode').value.trim();
+ if(!email||!token){reportAuth('E-posta adresinizi ve kodu girin.');return;}
+ try{
+  const res=await apiCall('/auth/v1/verify',{method:'POST',body:JSON.stringify({email,token,type:'email'})});
+  const data=await res.json();if(!res.ok)throw new Error(data.msg||data.message||'Kod geçerli değil');
+  privateSession=data;localStorage.setItem(SESSION_KEY,JSON.stringify(privateSession));
+  await enterPrivate();
+ }catch(e){reportAuth('Kod doğrulanamadı: '+String(e.message||e));}
+}
+async function restoreAuth(){
+ try{
+  const hash=new URLSearchParams(location.hash.replace(/^#/,''));
+  if(hash.get('access_token')&&hash.get('refresh_token')){
+    privateSession={access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token')};
+    localStorage.setItem(SESSION_KEY,JSON.stringify(privateSession));
+    history.replaceState(null,'',location.pathname+location.search);
+  } else if(hash.get('error_description')){
+    reportAuth('E-posta bağlantısı geçersiz veya süresi dolmuş: '+hash.get('error_description'));
+    history.replaceState(null,'',location.pathname+location.search);
+  } else privateSession=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
+  if(privateSession)await enterPrivate();
+ }catch(e){reportAuth('Oturum kontrolü başarısız: '+String(e.message||e));}
+}
+function logout(){
+ const token=privateSession?.access_token;
+ if(token)apiCall('/auth/v1/logout',{method:'POST'}).catch(()=>{});
+ privateSession=null;currentUser=null;rows=[];searchLabels=[];selected=null;detailOpen=false;
+ localStorage.removeItem(SESSION_KEY);
+ $('privateMain').hidden=true;$('detailBackdrop').hidden=true;$('authGate').hidden=false;
+ reportAuth('Oturum kapatıldı. Başka bir hesaba ait ilanlar görünmez.');
+}
 const SEARCH_KEY='engin-crm-favori-arama-etiketleri-v1';
 let searchLabels={};
 function validSearchLabel(s){return String(s||'').trim().slice(0,100);}
@@ -191,7 +298,7 @@ function addSearchName(id,name){
 }
 function loadSearchLabels(){
  try{
-   const data=JSON.parse(localStorage.getItem(SEARCH_KEY)||'{}');
+   const data=JSON.parse(localStorage.getItem(keyFor(SEARCH_KEY))||'{}');
    if(data && typeof data==='object' && !Array.isArray(data))
      for(const [id,labels] of Object.entries(data))
        if(Array.isArray(labels))for(const name of labels)addSearchName(id,name);
@@ -205,7 +312,7 @@ function fillSearchFilter(){
  select.value=names.includes(previous)||previous==='__none__'?previous:'all';
 }
 function saveSearchLabels(){
- try{localStorage.setItem(SEARCH_KEY,JSON.stringify(searchLabels));}
+ try{localStorage.setItem(keyFor(SEARCH_KEY),JSON.stringify(searchLabels));}
  catch(e){toast('Favori arama etiketleri kaydedilemedi. Tarayıcı depolamasını kontrol edin.');}
  fillSearchFilter();render();
 }
@@ -229,8 +336,8 @@ const $=id=>document.getElementById(id);
 function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function normalize(s){return String(s||'').toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ı/g,'i').replace(/ş/g,'s').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ö/g,'o').replace(/ç/g,'c').replace(/\s+/g,' ').trim();}
 function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',3400);}
-function load(){loadSearchLabels();try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');rows=Array.isArray(x)?x.filter(r=>r&&/^\d{8,12}$/.test(r.id)):[];for(const r of rows){if(r.status==='review' && !String(r.description||'').trim() && ['satilik','kiralik'].includes(r.type)){if(agencyAdvertiser(r.title)){r.status='blocked';r.notice='İlan başlığında emlak ofisi ibaresi var.';}else{r.status='ready';r.notice='İlan türüne göre mesaj hazır; açıklama incelenmedi.';}}}}catch(e){rows=[];toast('Kayıtlar okunamadı. Yedeğiniz varsa koruyun.');}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(rows));}catch(e){toast('Yerel depolama dolu veya kapalı. Yedek alınız.');} render();}
+function load(){loadSearchLabels();try{const x=JSON.parse(localStorage.getItem(keyFor(KEY))||'[]');rows=Array.isArray(x)?x.filter(r=>r&&/^\d{8,12}$/.test(r.id)):[];for(const r of rows){if(r.status==='review' && !String(r.description||'').trim() && ['satilik','kiralik'].includes(r.type)){if(agencyAdvertiser(r.title)){r.status='blocked';r.notice='İlan başlığında emlak ofisi ibaresi var.';}else{r.status='ready';r.notice='İlan türüne göre mesaj hazır; açıklama incelenmedi.';}}}}catch(e){rows=[];toast('Kayıtlar okunamadı. Yedeğiniz varsa koruyun.');}}
+function save(){try{localStorage.setItem(keyFor(KEY),JSON.stringify(rows));}catch(e){toast('Yerel depolama dolu veya kapalı. Yedek alınız.');} render();}
 function targetUrl(link){
   try{
     let u=new URL(link);
@@ -428,28 +535,35 @@ $('labelFile').addEventListener('change',async e=>{
 });
 let syncingFeed=false;
 async function refreshFeed(){
- if(syncingFeed)return;
+ if(syncingFeed||!currentUser)return;
  syncingFeed=true;
  $('refreshFeedBtn').disabled=true;
- $('feedStatus').textContent='Güncel favori ilanları kontrol ediliyor...';
+ $('feedStatus').textContent='Kişiye özel ilanlar kontrol ediliyor...';
  try{
-   const res=await fetch('./data/favori-ilanlar.json?v='+Date.now(),{cache:'no-store'});
-   if(!res.ok)throw new Error('HTTP '+res.status);
-   const data=await res.json();
-   if(data.schemaVersion!==1||!Array.isArray(data.listings))throw new Error('Geçersiz ilan listesi');
+   let res=await apiCall('/rest/v1/crm_favorite_search_listings?select=listing_id,title,url,price,deal_type,search_labels&order=listing_id.desc&limit=2000');
+   if(res.status===401 && await checkUser())res=await apiCall('/rest/v1/crm_favorite_search_listings?select=listing_id,title,url,price,deal_type,search_labels&order=listing_id.desc&limit=2000');
+   if(!res.ok)throw new Error('Özel listeye erişilemedi (HTTP '+res.status+')');
+   const items=await res.json();
+   if(!Array.isArray(items))throw new Error('Beklenmeyen sunucu yanıtı');
+   const data={listings:items.map(x=>({id:x.listing_id,title:x.title,url:x.url,price:x.price,type:x.deal_type}))};
    const added=importData(data,true);
-   const last=data.lastEmailAt?new Date(data.lastEmailAt).toLocaleString('tr-TR'):'bilinmiyor';
-   $('feedStatus').textContent='✓ Kaynaktaki '+data.listings.length+' ilan kontrol edildi. '+added+' yeni ilan eklendi. Son aktarılan e-posta: '+last+'.';
+   let labelsAdded=0;
+   for(const item of items){
+     if(Array.isArray(item.search_labels))for(const name of item.search_labels){
+       if(addSearchName(item.listing_id,name))labelsAdded++;
+     }
+   }
+   if(labelsAdded)saveSearchLabels();
+   $('feedStatus').textContent='✓ Hesabınıza ait '+items.length+' ilan kontrol edildi. '+added+' yeni ilan, '+labelsAdded+' yeni etiket eşleştirildi.';
  }catch(e){
-   console.warn('Automatic listing feed unavailable',e);
-   $('feedStatus').textContent='Otomatik ilan kaynağına ulaşılamadı ('+String(e.message||e)+'). Önceden kaydedilmiş ilanlar duruyor; sonra tekrar deneyin.';
+   console.warn('Private favorite feed unavailable',e);
+   $('feedStatus').textContent='Özel ilanlara ulaşılamadı: '+String(e.message||e)+'. Yerel kayıtlar silinmedi.';
  }finally{
-   syncingFeed=false;
-   $('refreshFeedBtn').disabled=false;
+   syncingFeed=false;$('refreshFeedBtn').disabled=false;
  }
 }
 $('refreshFeedBtn').addEventListener('click',refreshFeed);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshFeed();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentUser)refreshFeed();});
 $('search').addEventListener('input',render);
 for(const id of ['dealFilter','propertyFilter','favoriteSearchFilter','filter','sort'])$(id).addEventListener('change',render);
 $('resetFilters').addEventListener('click',()=>{
@@ -460,6 +574,10 @@ $('detailBackdrop').addEventListener('click',e=>{if(e.target===$('detailBackdrop
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&detailOpen)closeDetails();});
 $('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),listings:rows,favoriteSearchLabels:Object.entries(searchLabels).map(([id,labels])=>({id,labels}))},null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download='ilan-asistani-yedek.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);});
 $('speakBtn').addEventListener('click',()=>{if(!('speechSynthesis' in window)){toast('Bu tarayıcı seslendirmeyi desteklemiyor.');return;}speechSynthesis.cancel();const msg='Toplam '+rows.length+' farklı ilan var. '+rows.filter(r=>r.status==='review').length+' ilan türü belirsiz. '+rows.filter(r=>r.status==='ready').length+' ilan için mesaj hazır. '+rows.filter(r=>['positive','manual'].includes(r.status)).length+' müşteri dönüşü sizin yanıtınızı bekliyor.';const u=new SpeechSynthesisUtterance(msg);u.lang='tr-TR';speechSynthesis.speak(u);});
-load();fillSearchFilter();render();refreshFeed();
+$('passwordLogin').addEventListener('click',signInPassword);
+$('magicLogin').addEventListener('click',sendSignInLink);
+$('verifyCode').addEventListener('click',verifyEmailCode);
+$('logoutBtn').addEventListener('click',logout);
+restoreAuth();
 })();
 </script></body></html>
