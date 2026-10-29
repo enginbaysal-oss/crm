@@ -41,7 +41,7 @@ hr{border:0;border-top:1px solid var(--line);margin:20px 0}
 </head>
 <body>
 <main>
-<header><div><div class="eyebrow">Emlak CRM / Deneme Modülü</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlan inceleme • Müşteri dönüşleri</div></div><div class="controls"><a class="btn" href="./index.html">← CRM'ye Dön</a><button id="speakBtn">🔊 Özeti Oku</button><button id="exportBtn">Yedek İndir</button></div></header>
+<header><div><div class="eyebrow">Emlak CRM / İlan Asistanı • Sürüm 4 - Kopyalama düzeltmesi</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlan inceleme • Müşteri dönüşleri</div></div><div class="controls"><a class="btn" href="./index.html">← CRM'ye Dön</a><button id="speakBtn">🔊 Özeti Oku</button><button id="exportBtn">Yedek İndir</button></div></header>
 <div class="alert"><b>Doğrudan mesaj hazırlama modu.</b> Açıklama kopyalama zorunluluğu kaldırıldı. İlan satılık/kiralık ise doğru metin hazırlanır. “Mesajı Kopyala ve İlanı Aç” düğmesi sizi ilan sayfasına götürür. <b>Bu sürüm sahibinden.com üzerinden otomatik mesaj gönderemez.</b> Açıklamayı okumadığımız için satıcının emlakçılarla çalışmak istemediğini bilemeyiz; iletişim tercihlerini mutlaka gözetin.</div>
 <div class="stats">
 <div class="card stat"><div class="n" id="countAll">0</div><div class="t">Toplam farklı ilan</div></div>
@@ -169,54 +169,90 @@ function showDetail(){
  '<div class="note" id="notice">'+escapeHtml(r.notice||'Açıklama kontrolü zorunlu değil.')+'</div>'+
  '<label for="dealType">İlan türü</label><select id="dealType" '+(locked?'disabled':'')+'><option value="satilik">Satılık</option><option value="kiralik">Kiralık</option><option value="belirsiz">Belirsiz</option></select>'+
  '<hr><h2>İlan sahibine ilk mesaj</h2><textarea class="message" id="initialMessage" readonly spellcheck="false" aria-label="İlan sahibine gönderilecek mesaj" style="min-height:112px;display:block;">'+escapeHtml(message)+'</textarea>'+
- '<div class="controls" style="margin-top:10px"><button id="copyInitial" class="primary" '+(canPrepare?'':'disabled')+'>1. Mesajı Kopyala</button><a class="btn" href="'+escapeHtml(r.url)+'" target="_blank" rel="noopener noreferrer">2. İlanı Aç ↗</a></div><div class="controls" style="margin-top:8px"><button id="markSent" '+(canPrepare?'':'disabled')+'>Gönderdim, Kaydet</button></div>'+
- '<div class="small" style="margin-top:7px"><b>Sıra:</b> Önce “Mesajı Kopyala” düğmesine basın ve “Kopyalandı” onayını görün. Ardından “İlanı Aç” düğmesine basıp mesaj alanında Ctrl + V kullanın. Mesaj otomatik gönderilmez. İletişim istemeyenlere yazmayın. “Gönderdim” yalnızca sizin tuttuğunuz kayıttır.</div>'+
+ '<div class="controls" style="margin-top:10px"><button id="copyOpen" class="primary" '+(canPrepare?'':'disabled')+'>Mesajı Kopyala ve İlanı Aç</button><a id="openAfterCopy" class="btn" href="'+escapeHtml(r.url)+'" target="_blank" rel="noopener noreferrer" style="display:none">İlanı Aç ↗</a></div><div class="note" role="status" id="copyStatus">Önce mesajı kopyalayıp sonra ilanı açacağız. Kopyalanmazsa ilan açılmayacak.</div><div class="controls" style="margin-top:8px"><button id="markSent" '+(canPrepare?'':'disabled')+'>Gönderdim, Kaydet</button></div>'+
+ '<div class="small" style="margin-top:7px"><b>Çalışma şekli:</b> Tek düğme önce kopyalama işlemini dener; başarılıysa ilan sayfasını açar. İlanın mesaj alanına Ctrl + V ile yapıştırın. Tarayıcı kopyalamayı engellerse ilan açılmaz ve elle kopyalamanız için metin seçilir. Mesaj otomatik gönderilmez.</div>'+
  '<hr><h2>İlan sahibinin cevabı</h2><label for="reply">Gelen yanıt</label><textarea id="reply" placeholder="Örn. Bir süre kendim ilgileneceğim.">'+escapeHtml(r.reply||'')+'</textarea>'+
  '<div class="controls" style="margin-top:10px"><button id="classify" class="primary">Yanıtı Değerlendir</button><button id="copyClose" '+(r.status==='negative'?'':'disabled')+'>Nazik Kapanışı Kopyala</button></div>'+
  '<div class="small" style="margin-top:8px">Olumlu ve kararsız yanıtlarda manuel görüşme gerekir. Kesin retlere verilen kapanış metni de yalnızca taslaktır.</div>';
  $('dealType').value=r.type;
  $('dealType').addEventListener('change',e=>{if(locked)return;r.type=e.target.value;prepare(r);save();});
- $('copyInitial').addEventListener('click',async()=>{if(r.status!=='ready')return;await copy(r.type==='kiralik'?RENT:SALE,$('copyInitial'));});
+ $('copyOpen').addEventListener('click',()=>{
+   if(r.status!=='ready')return;
+   const text=r.type==='kiralik'?RENT:SALE;
+   const button=$('copyOpen'), status=$('copyStatus'), link=$('openAfterCopy');
+   button.disabled=true;
+   status.textContent='Mesaj panoya kopyalanıyor...';
+   // Synchronous copy preserves browser user activation for the new tab.
+   const synced=copySynchronously(text);
+   if(synced){
+     onCopySuccess(button,status,link);
+     const tab=window.open(r.url,'_blank');
+     if(tab){try{tab.opener=null;}catch(e){}}
+     else status.textContent='✓ Mesaj kopyalandı. Tarayıcı yeni sekmeyi engelledi; “İlanı Aç” bağlantısını kullanın.';
+     return;
+   }
+   // Some browsers expose only the asynchronous Clipboard API.
+   copyAsynchronously(text).then(ok=>{
+     if(!ok){
+       button.disabled=false;
+       status.textContent='Kopyalama engellendi. Mesajı seçtik; Ctrl + C ile kopyalayın. İlan açılmadı.';
+       const field=$('initialMessage');
+       if(field){field.focus();field.select();field.setSelectionRange(0,field.value.length);}
+       return;
+     }
+     onCopySuccess(button,status,link);
+     const tab=window.open(r.url,'_blank');
+     if(tab){try{tab.opener=null;}catch(e){}}
+     else status.textContent='✓ Mesaj kopyalandı. Yeni sekme açılamadı; “İlanı Aç” bağlantısını kullanın.';
+   });
+ });
  $('markSent').addEventListener('click',()=>{if(r.status!=='ready')return;r.status='sent';r.notice='Kullanıcı gönderdim olarak işaretledi. Gerçek gönderim site üzerinden doğrulanmadı.';save();});
  $('classify').addEventListener('click',()=>{r.reply=$('reply').value;const c=classify(r.reply);r.status=c.status;r.notice=c.note;save();if(c.status==='positive')toast('Olumlu dönüş: manuel yanıt bekliyor.');});
  $('copyClose').addEventListener('click',()=>{if(r.status==='negative')copy(CLOSE);});
 }
-async function copy(s,button){
+function copySynchronously(s){
+ const field=document.createElement('textarea');
+ field.value=s;
+ field.setAttribute('readonly','');
+ field.style.position='fixed';
+ field.style.top='0';
+ field.style.left='0';
+ field.style.width='1px';
+ field.style.height='1px';
+ field.style.opacity='0';
+ document.body.appendChild(field);
+ field.focus();
+ field.select();
+ field.setSelectionRange(0,field.value.length);
  let copied=false;
- // The copy button never opens another tab; changing focus before copying
- // can make the Clipboard API reject with NotAllowedError in Chrome.
- try{
-   if(navigator.clipboard && window.isSecureContext){
-     await navigator.clipboard.writeText(s);
-     copied=true;
-   }
- }catch(e){console.warn('Clipboard API rejected the copy operation:',e);}
- if(!copied){
-   // Older browsers and restricted contexts may still support execCommand.
-   const field=document.createElement('textarea');
-   field.value=s;
-   field.setAttribute('readonly','');
-   field.style.position='fixed';
-   field.style.top='0';
-   field.style.left='0';
-   field.style.opacity='0';
-   document.body.appendChild(field);
-   field.focus();
-   field.select();
-   field.setSelectionRange(0,field.value.length);
-   try{copied=!!document.execCommand('copy');}catch(e){copied=false;}
-   field.remove();
- }
- if(copied){
-   if(button)button.textContent='✓ Mesaj kopyalandı';
-   toast('Mesaj kopyalandı. Şimdi “İlanı Aç” ile devam edin.');
- }else{
-   const field=$('initialMessage');
-   if(field){field.focus();field.select();field.setSelectionRange(0,field.value.length);}
-   toast('Tarayıcı kopyalamayı engelledi. Metin seçildi; Ctrl + C ile kopyalayın.');
- }
+ try{copied=!!document.execCommand('copy');}catch(e){copied=false;}
+ field.remove();
  return copied;
 }
+async function copyAsynchronously(s){
+ try{
+   if(window.isSecureContext && navigator.clipboard && navigator.clipboard.writeText){
+     await navigator.clipboard.writeText(s);
+     return true;
+   }
+ }catch(e){console.warn('Clipboard write blocked',e);}
+ return false;
+}
+function onCopySuccess(button,status,link){
+ button.textContent='✓ Mesaj kopyalandı';
+ button.disabled=false;
+ status.textContent='✓ Kopyalandı. Açılan ilan sayfasında Ctrl + V ile yapıştırın.';
+ link.style.display='inline-block';
+ toast('Mesaj panoya alındı. Sahibinden.com mesaj alanında Ctrl + V yapın.');
+}
+async function copy(s){
+ if(copySynchronously(s)){toast('Mesaj kopyalandı.');return true;}
+ const ok=await copyAsynchronously(s);
+ if(ok)toast('Mesaj kopyalandı.');
+ else toast('Kopyalama engellendi, metni elle seçip kopyalayın.');
+ return ok;
+}
+
 $('importBtn').addEventListener('click',()=>{const b=$('mailText').value.trim();if(!b){toast('E-posta metnini yapıştırın.');return;}if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b)){toast('Yalnızca e-posta adresi değil, bildirim içeriği veya ilan dosyası gerekli.');return;}const n=importMail(b);if(!n)toast('İlan bağlantısı bulunamadı; lütfen ilan dosyasını yükleyin.');});
 $('importFileBtn').addEventListener('click',async()=>{const f=$('importFile').files&&$('importFile').files[0];if(!f){toast('Önce indirilen dosyayı seçin.');return;}if(f.size>2000000){toast('Dosya 2 MB sınırını aşıyor.');return;}try{const body=await f.text();if(f.name.toLowerCase().endsWith('.json'))importData(JSON.parse(body));else{const n=importMail(body);if(!n)toast('Bu dosyada tanınan ilan bağlantısı yok.');}}catch(e){toast('Dosya okunamadı: '+String(e.message||e));}});
 $('clearMailBtn').addEventListener('click',()=>$('mailText').value='');
