@@ -168,25 +168,55 @@ function showDetail(){
  '<div class="detail-meta"><span>'+escapeHtml(r.price)+'</span><span>'+typeName+'</span><span class="pill '+cssStatus(r.status)+'">'+escapeHtml(label(r))+'</span></div>'+
  '<div class="note" id="notice">'+escapeHtml(r.notice||'Açıklama kontrolü zorunlu değil.')+'</div>'+
  '<label for="dealType">İlan türü</label><select id="dealType" '+(locked?'disabled':'')+'><option value="satilik">Satılık</option><option value="kiralik">Kiralık</option><option value="belirsiz">Belirsiz</option></select>'+
- '<hr><h2>İlan sahibine ilk mesaj</h2><div class="message">'+escapeHtml(message)+'</div>'+
- '<div class="controls" style="margin-top:10px"><button id="copyOpen" class="primary" '+(canPrepare?'':'disabled')+'>Mesajı Kopyala ve İlanı Aç</button><button id="markSent" '+(canPrepare?'':'disabled')+'>Gönderdim, Kaydet</button></div>'+
- '<div class="small" style="margin-top:7px">Kopyalama mesaj göndermez. Sahibinden.com üzerinde mesaj gönder düğmesine kendiniz basmalısınız. İletişim istemeyenlere mesaj göndermeyin. Gönderildi olarak işaretlemek manuel kayıt işlemidir.</div>'+
+ '<hr><h2>İlan sahibine ilk mesaj</h2><textarea class="message" id="initialMessage" readonly spellcheck="false" aria-label="İlan sahibine gönderilecek mesaj" style="min-height:112px;display:block;">'+escapeHtml(message)+'</textarea>'+
+ '<div class="controls" style="margin-top:10px"><button id="copyInitial" class="primary" '+(canPrepare?'':'disabled')+'>1. Mesajı Kopyala</button><a class="btn" href="'+escapeHtml(r.url)+'" target="_blank" rel="noopener noreferrer">2. İlanı Aç ↗</a></div><div class="controls" style="margin-top:8px"><button id="markSent" '+(canPrepare?'':'disabled')+'>Gönderdim, Kaydet</button></div>'+
+ '<div class="small" style="margin-top:7px"><b>Sıra:</b> Önce “Mesajı Kopyala” düğmesine basın ve “Kopyalandı” onayını görün. Ardından “İlanı Aç” düğmesine basıp mesaj alanında Ctrl + V kullanın. Mesaj otomatik gönderilmez. İletişim istemeyenlere yazmayın. “Gönderdim” yalnızca sizin tuttuğunuz kayıttır.</div>'+
  '<hr><h2>İlan sahibinin cevabı</h2><label for="reply">Gelen yanıt</label><textarea id="reply" placeholder="Örn. Bir süre kendim ilgileneceğim.">'+escapeHtml(r.reply||'')+'</textarea>'+
  '<div class="controls" style="margin-top:10px"><button id="classify" class="primary">Yanıtı Değerlendir</button><button id="copyClose" '+(r.status==='negative'?'':'disabled')+'>Nazik Kapanışı Kopyala</button></div>'+
  '<div class="small" style="margin-top:8px">Olumlu ve kararsız yanıtlarda manuel görüşme gerekir. Kesin retlere verilen kapanış metni de yalnızca taslaktır.</div>';
  $('dealType').value=r.type;
  $('dealType').addEventListener('change',e=>{if(locked)return;r.type=e.target.value;prepare(r);save();});
- $('copyOpen').addEventListener('click',()=>{
-   if(r.status!=='ready')return;
-   // Trigger the external page from a user click to avoid popup blockers.
-   window.open(r.url,'_blank','noopener,noreferrer');
-   copy(r.type==='kiralik'?RENT:SALE);
- });
+ $('copyInitial').addEventListener('click',async()=>{if(r.status!=='ready')return;await copy(r.type==='kiralik'?RENT:SALE,$('copyInitial'));});
  $('markSent').addEventListener('click',()=>{if(r.status!=='ready')return;r.status='sent';r.notice='Kullanıcı gönderdim olarak işaretledi. Gerçek gönderim site üzerinden doğrulanmadı.';save();});
  $('classify').addEventListener('click',()=>{r.reply=$('reply').value;const c=classify(r.reply);r.status=c.status;r.notice=c.note;save();if(c.status==='positive')toast('Olumlu dönüş: manuel yanıt bekliyor.');});
  $('copyClose').addEventListener('click',()=>{if(r.status==='negative')copy(CLOSE);});
 }
-async function copy(s){try{await navigator.clipboard.writeText(s);toast('Mesaj kopyalandı.');}catch(e){toast('Tarayıcı kopyalamaya izin vermedi; metni seçip kopyalayın.');}}
+async function copy(s,button){
+ let copied=false;
+ // The copy button never opens another tab; changing focus before copying
+ // can make the Clipboard API reject with NotAllowedError in Chrome.
+ try{
+   if(navigator.clipboard && window.isSecureContext){
+     await navigator.clipboard.writeText(s);
+     copied=true;
+   }
+ }catch(e){console.warn('Clipboard API rejected the copy operation:',e);}
+ if(!copied){
+   // Older browsers and restricted contexts may still support execCommand.
+   const field=document.createElement('textarea');
+   field.value=s;
+   field.setAttribute('readonly','');
+   field.style.position='fixed';
+   field.style.top='0';
+   field.style.left='0';
+   field.style.opacity='0';
+   document.body.appendChild(field);
+   field.focus();
+   field.select();
+   field.setSelectionRange(0,field.value.length);
+   try{copied=!!document.execCommand('copy');}catch(e){copied=false;}
+   field.remove();
+ }
+ if(copied){
+   if(button)button.textContent='✓ Mesaj kopyalandı';
+   toast('Mesaj kopyalandı. Şimdi “İlanı Aç” ile devam edin.');
+ }else{
+   const field=$('initialMessage');
+   if(field){field.focus();field.select();field.setSelectionRange(0,field.value.length);}
+   toast('Tarayıcı kopyalamayı engelledi. Metin seçildi; Ctrl + C ile kopyalayın.');
+ }
+ return copied;
+}
 $('importBtn').addEventListener('click',()=>{const b=$('mailText').value.trim();if(!b){toast('E-posta metnini yapıştırın.');return;}if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b)){toast('Yalnızca e-posta adresi değil, bildirim içeriği veya ilan dosyası gerekli.');return;}const n=importMail(b);if(!n)toast('İlan bağlantısı bulunamadı; lütfen ilan dosyasını yükleyin.');});
 $('importFileBtn').addEventListener('click',async()=>{const f=$('importFile').files&&$('importFile').files[0];if(!f){toast('Önce indirilen dosyayı seçin.');return;}if(f.size>2000000){toast('Dosya 2 MB sınırını aşıyor.');return;}try{const body=await f.text();if(f.name.toLowerCase().endsWith('.json'))importData(JSON.parse(body));else{const n=importMail(body);if(!n)toast('Bu dosyada tanınan ilan bağlantısı yok.');}}catch(e){toast('Dosya okunamadı: '+String(e.message||e));}});
 $('clearMailBtn').addEventListener('click',()=>$('mailText').value='');
