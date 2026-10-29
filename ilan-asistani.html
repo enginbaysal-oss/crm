@@ -51,8 +51,8 @@ hr{border:0;border-top:1px solid var(--line);margin:20px 0}
 </div>
 <div class="columns">
 <section class="card">
-<h2>1. Sahibinden e-postasını ekle</h2><div class="small">Gmail'deki “Favori Arama için Sonuçlar” bildirim metnini seçip buraya yapıştırın. Aynı ilan numarası ikinci defa eklenmez.</div>
-<label for="mailText">E-posta içeriği</label><textarea id="mailText" placeholder="Favori Aramanız için Sonuçlar&#10;[İlan başlığı](https://pro.sahibinden.com/?return_url=https://www.sahibinden.com/ilan/...)&#10;#1234567890&#10;Fiyat: 4.100.000 TL"></textarea>
+<h2>1. Sahibinden e-postasını ekle</h2><div class="small">Gmail adresini yazmak bağlantı kurmaz. Bugünkü ilanları ChatGPT'den aldığınız JSON dosyasını aşağıdan yükleyin. Aynı ilan numarası ikinci defa eklenmez.</div>
+<label for="importFile">İlan dosyası (.json)</label><input id="importFile" type="file" accept=".json,.txt,.eml,application/json,text/plain"><div class="controls" style="margin-top:9px"><button id="importFileBtn" class="primary">İlan Dosyasını Yükle</button></div><div class="note">Dosyayı ChatGPT üzerinden indirip buradan seçebilirsiniz. Dosyadaki ilanlar kontrol bekler; açıklamalar ve mesaj gönderimi otomatik değildir.</div><hr><h2>Alternatif: E-posta metni yapıştır</h2><div class="small">Yalnızca e-posta adresi değil, <b>ilan bağlantılarını içeren tam bildirim metni</b> gerekir.</div><label for="mailText">Favori arama bildirim metni</label><textarea id="mailText" placeholder="Favori Aramanız için Sonuçlar&#10;[İlan başlığı](https://pro.sahibinden.com/?return_url=https://www.sahibinden.com/ilan/...)&#10;#1234567890&#10;Fiyat: 4.100.000 TL"></textarea>
 <div class="controls" style="margin-top:9px"><button id="importBtn" class="primary">İlanları İçeri Al</button><button id="clearMailBtn">Metni Temizle</button></div>
 <hr>
 <h2>2. İlanları takip et</h2>
@@ -102,6 +102,27 @@ function importMail(body){
  }
  save();if(added)selected=rows[0].id;render();toast(added+' ilan eklendi; '+dup+' tekrar atlandı.');return added;
 }
+function agencyAdvertiser(title){const s=normalize(title);return /(?:emlaktan|emlak ofisinden|gayrimenkul ofisinden|emlakci araciligiyla|(?:remax|remaks|coldwell banker|kw gayrimenkul)\b)/.test(s);}
+function importData(data){
+ const input=Array.isArray(data)?data:data&&Array.isArray(data.listings)?data.listings:null;
+ if(!input)throw new Error('Dosya ilan listesi içermiyor.');
+ if(input.length>2000)throw new Error('Dosyada çok fazla ilan var.');
+ let added=0,duplicates=0,invalid=0;
+ for(const entry of input){
+   const target=entry&&typeof entry.url==='string'?targetUrl(entry.url):null;
+   if(!target||entry.id&&String(entry.id)!==target.id){invalid++;continue;}
+   if(rows.some(r=>r.id===target.id)){duplicates++;continue;}
+   const title=String(entry.title||'Başlıksız ilan').slice(0,260);
+   const type=['satilik','kiralik'].includes(entry.type)?entry.type:guessDeal(target.path+' '+title);
+   const row={id:target.id,title,url:target.url,price:String(entry.price||'Belirtilmemiş').slice(0,100),type,description:'',reply:'',status:'review',notice:'E-postadan alındı. İlanın tam açıklaması henüz okunmadı.',createdAt:new Date().toISOString()};
+   if(agencyAdvertiser(title)){row.status='blocked';row.notice='Başlık emlak ofisi ilanına işaret ediyor. İletişime geçmeyin.';}
+   rows.unshift(row);added++;
+ }
+ if(added)selected=rows[0].id;
+ save();
+ toast(added+' yeni ilan eklendi, '+duplicates+' tekrar atlandı, '+invalid+' geçersiz bağlantı.');
+ return added;
+}
 function restricted(description){
  const s=normalize(description);
  const agent='(?:emlakci(?:lar|larla|larla|yla)?|emlak ofis(?:i|leri)|gayrimenkul danisman(?:i|lari)|danisman(?:lar)?|komisyoncu(?:lar)?|araci(?:lar)?)';
@@ -109,6 +130,7 @@ function restricted(description){
  return new RegExp(agent+'.{0,85}'+block).test(s)||new RegExp(block+'.{0,50}'+agent).test(s)||/emlakcilara kapali|emlakciya kapali|emlakci kesinlikle aramasin/.test(s);
 }
 function inspect(r){
+ if(agencyAdvertiser(r.title)){r.status='blocked';r.notice='İlan başlığında emlak ofisi/danışmanı ibaresi var; mülk sahibi ilanı olarak değerlendirilmedi.';return;}
  if(!r.description.trim()){r.status='review';r.notice='Açıklama okunmadığı için güvenli karar verilemedi.';return;}
  if(restricted(r.description)){r.status='blocked';r.notice='Emlakçı/danışman iletişimi istemeyen ifade tespit edildi. Mesaj hazırlanmaz.';return;}
  if(r.type==='belirsiz'){r.status='review';r.notice='İlanın satılık veya kiralık olduğunu seçiniz.';return;}
@@ -172,7 +194,8 @@ function showDetail(){
  $('copyClose').addEventListener('click',()=>{if(r.status==='negative')copy(CLOSE);});
 }
 async function copy(s){try{await navigator.clipboard.writeText(s);toast('Mesaj kopyalandı.');}catch(e){toast('Tarayıcı kopyalamaya izin vermedi; metni seçip kopyalayın.');}}
-$('importBtn').addEventListener('click',()=>{const b=$('mailText').value.trim();if(!b){toast('E-posta metnini yapıştırın.');return;}const n=importMail(b);if(!n)toast('Yeni ilan bağlantısı bulunamadı veya hepsi daha önce eklenmiş.');});
+$('importBtn').addEventListener('click',()=>{const b=$('mailText').value.trim();if(!b){toast('E-posta metnini yapıştırın.');return;}if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b)){toast('Yalnızca e-posta adresi değil, bildirim içeriği veya ilan dosyası gerekli.');return;}const n=importMail(b);if(!n)toast('İlan bağlantısı bulunamadı; lütfen ilan dosyasını yükleyin.');});
+$('importFileBtn').addEventListener('click',async()=>{const f=$('importFile').files&&$('importFile').files[0];if(!f){toast('Önce indirilen dosyayı seçin.');return;}if(f.size>2000000){toast('Dosya 2 MB sınırını aşıyor.');return;}try{const body=await f.text();if(f.name.toLowerCase().endsWith('.json'))importData(JSON.parse(body));else{const n=importMail(body);if(!n)toast('Bu dosyada tanınan ilan bağlantısı yok.');}}catch(e){toast('Dosya okunamadı: '+String(e.message||e));}});
 $('clearMailBtn').addEventListener('click',()=>$('mailText').value='');
 $('search').addEventListener('input',render);$('filter').addEventListener('change',render);
 $('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),listings:rows},null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download='ilan-asistani-yedek.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);});
