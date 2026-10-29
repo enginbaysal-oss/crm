@@ -116,8 +116,8 @@ main{max-width:1200px}
 </head>
 <body>
 <main>
-<header class="page-head"><div><div class="eyebrow">Emlak CRM / İlan Asistanı</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlan inceleme • Müşteri dönüşleri</div></div><div class="controls"><a class="btn" href="./index.html">← CRM'ye Dön</a><button id="speakBtn">🔊 Özeti Oku</button><button id="exportBtn">Yedek İndir</button></div></header>
-<div class="alert"><b>İlan Asistanı:</b> Favori aramalardan gelen ilanları kategorilere ayırıp hızlıca inceleyebilirsiniz. İlan kartına tıklayıp satış veya kiralama mesajını kopyalayın. <b>Mesajlar otomatik gönderilmez.</b> İlan açıklamasını siz kontrol edeceksiniz; iletişim istemeyen mülk sahiplerine mesaj göndermeyin.</div>
+<header class="page-head"><div><div class="eyebrow">Emlak CRM / İlan Asistanı</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlan inceleme • Müşteri dönüşleri</div></div><div class="controls"><a class="btn" href="./index.html">← CRM'ye Dön</a></div></header>
+
 <div class="feed-bar"><div><strong>Favori ilanlar • Otomatik senkronizasyon</strong><div id="feedStatus" role="status">Güncel ilanlar kontrol ediliyor...</div></div><button id="refreshFeedBtn" class="primary" type="button">↻ Yenile</button></div>
 <div class="summary-line" aria-label="İlan özeti">
  <span><b id="countAll">0</b> toplam ilan</span><span><b id="countReady">0</b> mesaj hazır</span><span><b id="countReply">0</b> manuel yanıt</span><span><b id="countPending">0</b> türü belirsiz</span>
@@ -144,8 +144,10 @@ main{max-width:1200px}
  <div class="listing-head" aria-hidden="true"><span>İLAN BİLGİSİ</span><span>İLAN TÜRÜ</span><span>FİYAT</span><span>GÖRÜŞME</span></div>
  <div id="list" class="list" aria-live="polite"></div>
 </section>
-<details class="data-tools"><summary>Yedek dosyadan veya e-postadan manuel ilan ekle (isteğe bağlı)</summary>
+<details class="data-tools"><summary>Diğer İşlemler (yedekleme, sesli özet, dosyadan ekleme)</summary>
  <div class="data-tools-content">
+  <p class="small">Mesajlar otomatik gönderilmez. İlan açıklamasını kontrol edin ve emlakçıyla iletişim istemeyen kişilere yazmayın.</p>
+  <div class="controls" style="margin:10px 0"><button type="button" id="speakBtn">🔊 Özeti Oku</button><button type="button" id="exportBtn">Yedek İndir</button></div>
   <p class="small">Normal kullanımda dosya yüklemeniz gerekmez. Otomatik aktarım çalışmadığında kullanabilirsiniz.</p>
   <label for="importFile">İlan dosyası (.json, .txt, .eml)</label>
   <input id="importFile" type="file" accept=".json,.txt,.eml,application/json,text/plain">
