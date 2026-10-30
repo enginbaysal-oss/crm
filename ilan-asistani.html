@@ -330,7 +330,9 @@ function importSearchNames(data){
 }
 const SALE='Merhabalar, ben Remax Manisa Ofisinden Engin BAYSAL, mülkünüzün satışına yönelik olarak bizimle çalışmak ister misiniz?';
 const RENT='Merhabalar, ben Remax Manisa Ofisinden Engin BAYSAL, mülkünüzün kiralanmasına yönelik olarak bizimle çalışmak ister misiniz?';
-const CLOSE='Rica ederim, anlayışınız için teşekkür ederim. Hayırlı müşteriler dilerim. İyi günler.';
+const REPLY_POSITIVE='Teşekkür ederim 😊 Müsait olduğunuzda kısa bir telefon görüşmesi yapalım, detayları konuşalım.\n\nEngin BAYSAL';
+const REPLY_LATER='Anlıyorum, teşekkür ederim. 😊 İleride ihtiyaç olursa memnuniyetle yardımcı olurum. Bu süreçte size hayırlı müşteriler diliyorum, İyi günler...';
+const CLOSE='Anladım, kararınıza saygı duyuyorum. Bu süreçte size hayırlı müşteriler diliyorum, İyi günler...';
 let rows=[],selected=null;
 const $=id=>document.getElementById(id);
 function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -474,14 +476,14 @@ function showDetail(){
  '<div class="controls" style="margin-top:10px"><button id="copyAndOpen" class="primary" '+(canPrepare?'':'disabled')+'>Mesajı Kopyala ve İlanı Aç ↗</button></div><div class="controls" style="margin-top:8px"><button id="markSent" '+(canPrepare?'':'disabled')+'>Gönderdim, Kaydet</button></div>'+
  '<div class="small" style="margin-top:7px"><b>Sıra:</b> “Mesajı Kopyala ve İlanı Aç” düğmesine basın. Mesaj kopyalanır ve ilan yeni sekmede açılır. İletişim istemeyenlere yazmayın; uygunsa Ctrl + V ile yapıştırın. Mesaj otomatik gönderilmez. İletişim istemeyenlere yazmayın. “Gönderdim” yalnızca sizin tuttuğunuz kayıttır.</div>'+
  '<hr><h2>İlan sahibinin cevabı</h2><label for="reply">Gelen yanıt</label><textarea id="reply" placeholder="Örn. Bir süre kendim ilgileneceğim.">'+escapeHtml(r.reply||'')+'</textarea>'+
- '<div class="controls" style="margin-top:10px"><button id="classify" class="primary">Yanıtı Değerlendir</button><button id="copyClose" '+(r.status==='negative'?'':'disabled')+'>Nazik Kapanışı Kopyala</button></div>'+
- '<div class="small" style="margin-top:8px">Olumlu ve kararsız yanıtlarda manuel görüşme gerekir. Kesin retlere verilen kapanış metni de yalnızca taslaktır.</div>';
+ '<div class="controls" style="margin-top:10px"><button id="classify" class="primary">Yanıtı Değerlendir</button><button id="copyReply" '+(['positive','negative'].includes(r.status)||r.status==='manual'&&/bir sure kendim|kendim ilgilenecegim|ileride olabilir|daha sonra|simdilik|sonra goruselim|su an dusunmuyorum|biraz bekle/.test(normalize(r.reply))?'':'disabled')+'>Hazır Yanıtı Kopyala</button></div>'+
+ '<div class="small" style="margin-top:8px">Hazır yanıtlar öneridir; göndermeden önce kontrol edin. “Bir daha yazmayın” diyenlere yanıt gönderilmez.</div>';
  $('dealType').value=r.type;
  $('dealType').addEventListener('change',e=>{if(locked)return;r.type=e.target.value;prepare(r);save();});
  $('copyAndOpen').addEventListener('click',async()=>{if(r.status!=='ready')return;const tab=window.open('about:blank','_blank');if(tab)tab.opener=null;const ok=await copy(r.type==='kiralik'?RENT:SALE,$('copyAndOpen'));if(!ok){if(tab)tab.close();return;}if(tab){tab.location.replace(r.url);}else{toast('Mesaj kopyalandı. Açılır pencere engellendi; tarayıcı ayarlarından izin verin.');}});
  $('markSent').addEventListener('click',()=>{if(r.status!=='ready')return;r.status='sent';r.notice='Kullanıcı gönderdim olarak işaretledi. Gerçek gönderim site üzerinden doğrulanmadı.';save();});
  $('classify').addEventListener('click',()=>{r.reply=$('reply').value;const c=classify(r.reply);r.status=c.status;r.notice=c.note;save();if(c.status==='positive')toast('Olumlu dönüş: manuel yanıt bekliyor.');});
- $('copyClose').addEventListener('click',()=>{if(r.status==='negative')copy(CLOSE);});
+ $('copyReply').addEventListener('click',()=>{const replyClass=classify(r.reply||'');if(replyClass.status==='blockedReply'){toast('İletişim yasağı var; yanıt gönderilmez.');return;}const msg=replyClass.status==='positive'?REPLY_POSITIVE:replyClass.status==='negative'?CLOSE:replyClass.status==='manual'&&/bir sure kendim|kendim ilgilenecegim|ileride olabilir|daha sonra|simdilik|sonra goruselim|su an dusunmuyorum|biraz bekle/.test(normalize(r.reply))?REPLY_LATER:null;if(msg)copy(msg,$('copyReply'));else toast('Bu yanıt manuel değerlendirme gerektiriyor.');});
 }
 async function copy(s,button){
  let copied=false;
