@@ -191,6 +191,8 @@ const SENT_KEY='engin-crm-ilan-asistani-sent-v1';
 function sentLedger(){try{return JSON.parse(localStorage.getItem(keyFor(SENT_KEY))||'{}')||{};}catch(e){return {};}}
 function rememberSent(id){const ledger=sentLedger();ledger[String(id)]=new Date().toISOString();localStorage.setItem(keyFor(SENT_KEY),JSON.stringify(ledger));}
 function applySentLedger(){const ledger=sentLedger();for(const r of rows){if(ledger[String(r.id)]&&r.status!=='excluded'){r.status='sent';r.notice='Mesaj gönderildi olarak kaydedildi.';}}}
+async function syncContactStatus(){if(!currentUser)return;try{const ledger=sentLedger();for(const r of rows)if(r.status==='sent')ledger[String(r.id)]=ledger[String(r.id)]||new Date().toISOString();localStorage.setItem(keyFor(SENT_KEY),JSON.stringify(ledger));const res=await apiCall('/rest/v1/crm_listing_contact_status?select=listing_id,status&limit=5000');if(!res.ok)throw new Error('HTTP '+res.status);const remote=await res.json();for(const x of remote){const r=rows.find(y=>y.id===String(x.listing_id));if(r&&x.status==='sent'&&r.status!=='excluded'){r.status='sent';r.notice='Gönderim durumu hesabınızdan yüklendi.';}if(x.status==='sent')ledger[String(x.listing_id)]=ledger[String(x.listing_id)]||new Date().toISOString();}localStorage.setItem(keyFor(SENT_KEY),JSON.stringify(ledger));const remoteIds=new Set(remote.filter(x=>x.status==='sent').map(x=>String(x.listing_id)));const missing=Object.keys(ledger).filter(id=>!remoteIds.has(id));if(missing.length){const response=await apiCall('/rest/v1/crm_listing_contact_status?on_conflict=user_id,listing_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates'},body:JSON.stringify(missing.map(id=>({user_id:currentUser.id,listing_id:id,status:'sent'})))});if(!response.ok)throw new Error('Kayıt senkronu HTTP '+response.status);}save();}catch(e){console.warn('Gönderim durumu bulut senkronu başarısız',e);toast('Gönderim kayıtları bulutla eşitlenemedi; yerel kayıtlar korundu.');}}
+async function recordSentCloud(id){if(!currentUser)return;try{const res=await apiCall('/rest/v1/crm_listing_contact_status?on_conflict=user_id,listing_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates'},body:JSON.stringify([{user_id:currentUser.id,listing_id:String(id),status:'sent'}])});if(!res.ok)throw new Error('HTTP '+res.status);}catch(e){console.warn('Gönderim durumu kaydedilemedi',e);toast('Gönderim yalnızca bu tarayıcıya kaydedildi; bulut bağlantısını kontrol edin.');}}
 const LEGACY_OWNER_ID='dd1c8258-2d3b-4428-aebd-5e2b9cda97ec';
 const SESSION_KEY='engin-crm-private-session-v1';
 const API_BASE='https://jcjerwvibjetomqeelsy.supabase.co';
@@ -227,7 +229,7 @@ async function enterPrivate(){
  currentUser=user;transferLegacyData();
  rows=[];searchLabels={};load();applySentLedger();fillSearchFilter();
  $('authGate').hidden=true;$('privateMain').hidden=false;
- render();await refreshFeed();return true;
+ render();await refreshFeed();await syncContactStatus();return true;
 }
 function reportAuth(s){$('authStatus').textContent=s;}
 async function signInPassword(){
@@ -487,7 +489,7 @@ function showDetail(){
  $('dealType').addEventListener('change',e=>{if(locked)return;r.type=e.target.value;prepare(r);save();});
  $('copyAndOpen').addEventListener('click',async()=>{if(r.status!=='ready')return;const tab=window.open('about:blank','_blank');if(tab)tab.opener=null;const ok=await copy(r.type==='kiralik'?RENT:SALE,$('copyAndOpen'));if(!ok){if(tab)tab.close();return;}if(tab){tab.location.replace(r.url);}else{toast('Mesaj kopyalandı. Açılır pencere engellendi; tarayıcı ayarlarından izin verin.');}});
  $('excludeListing').addEventListener('click',()=>{if(r.status==='excluded'){r.status=r.previousStatus||'ready';delete r.previousStatus;r.notice='Tercih geri alındı.';}else{r.previousStatus=r.status;r.status='excluded';r.notice='Tercih edilmiyor; ilan gizlendi.';}closeDetails();save();});
- $('markSent').addEventListener('click',()=>{if(r.status!=='ready')return;r.status='sent';r.notice='Mesaj gönderildi olarak kaydedildi.';try{rememberSent(r.id);}catch(e){toast('Gönderim kaydı saklanamadı; tarayıcı depolama iznini kontrol edin.');}save();});
+ $('markSent').addEventListener('click',()=>{if(r.status!=='ready')return;r.status='sent';r.notice='Mesaj gönderildi olarak kaydedildi.';try{rememberSent(r.id);}catch(e){toast('Gönderim kaydı saklanamadı; tarayıcı depolama iznini kontrol edin.');}save();recordSentCloud(r.id);});
 
 }
 async function copy(s,button){
@@ -539,7 +541,7 @@ $('labelFile').addEventListener('change',async e=>{
  finally{e.target.value='';}
 });
 let syncingFeed=false;
-async function refreshFeed(){
+async async function refreshFeed(){
  if(syncingFeed||!currentUser)return;
  syncingFeed=true;
  $('refreshFeedBtn').disabled=true;
@@ -561,6 +563,7 @@ async function refreshFeed(){
    }
    for(const item of items){const row=rows.find(x=>x.id===String(item.listing_id));if(row&&/^\d{4}-\d{2}-\d{2}$/.test(item.last_notified_on||''))row.lastNotifiedOn=item.last_notified_on;}
    save();
+   await syncContactStatus();
    if(labelsAdded)saveSearchLabels();
    $('feedStatus').textContent='✓ Hesabınıza ait '+items.length+' ilan kontrol edildi. '+added+' yeni ilan, '+labelsAdded+' yeni etiket eşleştirildi.';
  }catch(e){
