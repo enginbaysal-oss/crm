@@ -133,11 +133,11 @@ main{max-width:1200px}
  <p id="authStatus" role="status" class="small" style="margin-top:12px">Giriş yapmadan özel ilanlar görüntülenmez.</p>
 </section>
 <main id="privateMain" hidden>
-<header class="page-head"><div><div class="eyebrow">Emlak CRM / İlan Asistanı</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlan inceleme • Müşteri dönüşleri</div></div><div class="controls"><a class="btn" href="./index.html">← CRM'ye Dön</a><button type="button" id="logoutBtn">Oturumu Kapat</button></div></header>
+<header class="page-head"><div><div class="eyebrow">Emlak CRM / İlan Asistanı</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlanları görüntüleme</div></div><div class="controls"><a class="btn" href="./index.html">← CRM'ye Dön</a><button type="button" id="logoutBtn">Oturumu Kapat</button></div></header>
 
 <div class="feed-bar"><div><strong>Kişiye özel favori ilanlar • Otomatik senkronizasyon</strong><div id="feedStatus" role="status">Güncel ilanlar kontrol ediliyor...</div></div><button id="refreshFeedBtn" class="primary" type="button">↻ Yenile</button></div>
 <div class="summary-line" aria-label="İlan özeti">
- <span><b id="countAll">0</b> toplam ilan</span><span><b id="countReady">0</b> mesaj hazır</span><span><b id="countReply">0</b> manuel yanıt</span><span><b id="countPending">0</b> türü belirsiz</span>
+ <span><b id="countAll">0</b> toplam ilan</span><span><b id="countReady">0</b> mesaj hazır</span><span><b id="countPending">0</b> türü belirsiz</span>
 </div>
 <section class="card workspace" aria-label="Favori ilan listesi">
  <div class="workspace-header"><div><h2>Favori İlanlarım</h2><p class="small">İlanları filtreleyin; incelemek istediğiniz satıra tıklayın.</p></div><div class="controls"><button id="dateToggle" type="button">Geçmişi göster</button><button id="excludedToggle" type="button">Tercih etmediklerim (0)</button><strong id="resultCount" class="result-count" aria-live="polite">0 ilan</strong></div></div>
@@ -152,16 +152,15 @@ main{max-width:1200px}
    <div class="field"><label for="favoriteSearchFilter">Favori Arama Adı</label><select id="favoriteSearchFilter"><option value="all">Tüm favori aramalar</option></select></div>
    <div class="field"><label for="propertyFilter">Gayrimenkul Türü</label><select id="propertyFilter">
     <option value="all">Tümü</option><option value="konut">Konut</option><option value="ticari">Ticari</option><option value="diger">Diğer</option></select></div>
-   <div class="field"><label for="filter">Görüşme Durumu</label><select id="filter">
+   <div class="field"><label for="filter">İlan Durumu</label><select id="filter">
     <option value="all">Tümü</option><option value="ready">Mesaj hazır</option><option value="sent">Mesaj gönderildi</option>
-    <option value="manual">Manuel yanıt bekliyor</option><option value="negative">Olumsuz dönüş</option>
     <option value="blocked">İletişim yok / engelli</option><option value="review">Türü belirsiz</option></select></div>
    <div class="field"><label for="sort">Sıralama</label><select id="sort">
     <option value="id-desc">İlan no: büyükten küçüğe</option><option value="price-asc">Fiyat: düşükten yükseğe</option>
     <option value="price-desc">Fiyat: yüksekten düşüğe</option><option value="name">Başlık: A–Z</option></select></div>
   </div>
  </div>
- <div class="listing-head" aria-hidden="true"><span>İLAN BİLGİSİ</span><span>İLAN TÜRÜ</span><span>FİYAT</span><span>GÖRÜŞME</span></div>
+ <div class="listing-head" aria-hidden="true"><span>İLAN BİLGİSİ</span><span>İLAN TÜRÜ</span><span>FİYAT</span><span>DURUM</span></div>
  <div id="list" class="list" aria-live="polite"></div>
 </section>
 <details class="data-tools"><summary>Diğer İşlemler (yedekleme, sesli özet, dosyadan ekleme)</summary>
@@ -172,12 +171,10 @@ main{max-width:1200px}
   <label for="importFile">İlan dosyası (.json, .txt, .eml)</label>
   <input id="importFile" type="file" accept=".json,.txt,.eml,application/json,text/plain">
   <div class="controls" style="margin-top:9px"><button id="importFileBtn" class="primary">İlan Dosyasını Yükle</button></div>
-  <hr><label for="mailText">Favori arama e-postasının tam içeriği</label>
-  <textarea id="mailText" placeholder="İlan bağlantılarını içeren bildirim metni..."></textarea>
-  <div class="controls" style="margin-top:9px"><button id="importBtn" class="primary">İlanları İçeri Al</button><button id="clearMailBtn">Metni Temizle</button></div>
+
  </div>
 </details>
-<div class="small" style="margin-top:16px">İlanlar hesabınıza özel veritabanından alınır. Mesaj ve görüşme durumları bu kullanıcı için yalnızca bu tarayıcıda saklanır; diğer cihazlara otomatik aktarılmaz. Sahibinden.com'a otomatik mesaj gönderilmez.</div>
+<div class="small" style="margin-top:16px">İlanlar hesabınıza özel veritabanından alınır. Tercihler bu tarayıcıda saklanır. Sahibinden.com mesajları bu uygulama tarafından okunmaz veya gönderilmez.</div>
 </main>
 <div id="detailBackdrop" hidden>
  <section class="detail-shell" role="dialog" aria-modal="true" aria-label="İlan detayları">
@@ -442,7 +439,7 @@ function render(){
  $('countAll').textContent=rows.length;
  $('countPending').textContent=rows.filter(r=>r.status==='review').length;
  $('countReady').textContent=rows.filter(r=>r.status==='ready').length;
- $('countReply').textContent=rows.filter(r=>['manual','positive'].includes(r.status)).length;
+
  const q=normalize($('search').value),deal=$('dealFilter').value,property=$('propertyFilter').value,f=$('filter').value,sort=$('sort').value,searchName=$('favoriteSearchFilter').value;
  const hasDatedRows=rows.some(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.lastNotifiedOn||''));
  const a=rows.filter(r=>(showHistory||!hasDatedRows||r.lastNotifiedOn===todayTR())&&(showExcluded?r.status==='excluded':r.status!=='excluded')&&(deal==='all'||r.type===deal)&&(property==='all'||kind(r)===property)&&inStatus(r,f)&&(searchName==='all'||searchName==='__none__'&&!searchNames(r.id).length||searchNames(r.id).includes(searchName))&&(!q||normalize([r.title,r.id,r.price,r.type,...searchNames(r.id)].join(' ')).includes(q)));
@@ -481,16 +478,13 @@ function showDetail(){
  '<hr><h2>İlan sahibine ilk mesaj</h2><textarea class="message" id="initialMessage" readonly spellcheck="false" aria-label="İlan sahibine gönderilecek mesaj" style="min-height:112px;display:block;">'+escapeHtml(message)+'</textarea>'+
  '<div class="controls" style="margin-top:10px"><button id="copyAndOpen" class="primary" '+(canPrepare?'':'disabled')+'>Mesajı Kopyala ve İlanı Aç ↗</button><button id="excludeListing">'+(r.status==='excluded'?'Tercihimi Geri Al':'Tercih Etmiyorum')+'</button></div><div class="controls" style="margin-top:8px"><button id="markSent" '+(canPrepare?'':'disabled')+'>Gönderdim, Kaydet</button></div>'+
  '<div class="small" style="margin-top:7px"><b>Sıra:</b> “Mesajı Kopyala ve İlanı Aç” düğmesine basın. Mesaj kopyalanır ve ilan yeni sekmede açılır. İletişim istemeyenlere yazmayın; uygunsa Ctrl + V ile yapıştırın. Mesaj otomatik gönderilmez. İletişim istemeyenlere yazmayın. “Gönderdim” yalnızca sizin tuttuğunuz kayıttır.</div>'+
- '<hr><h2>İlan sahibinin cevabı</h2><label for="reply">Gelen yanıt</label><textarea id="reply" placeholder="Örn. Bir süre kendim ilgileneceğim.">'+escapeHtml(r.reply||'')+'</textarea>'+
- '<div class="controls" style="margin-top:10px"><button id="classify" class="primary">Yanıtı Değerlendir</button><button id="copyReply" '+(['positive','negative'].includes(r.status)||r.status==='manual'&&/bir sure kendim|kendim ilgilenecegim|ileride olabilir|daha sonra|simdilik|sonra goruselim|su an dusunmuyorum|biraz bekle/.test(normalize(r.reply))?'':'disabled')+'>Hazır Yanıtı Kopyala</button></div>'+
- '<div class="small" style="margin-top:8px">Hazır yanıtlar öneridir; göndermeden önce kontrol edin. “Bir daha yazmayın” diyenlere yanıt gönderilmez.</div>';
+ '<div class="small" style="margin-top:8px">Yanıtları ve görüşmeleri sahibinden.com üzerinden takip edebilirsiniz.</div>';
  $('dealType').value=r.type;
  $('dealType').addEventListener('change',e=>{if(locked)return;r.type=e.target.value;prepare(r);save();});
  $('copyAndOpen').addEventListener('click',async()=>{if(r.status!=='ready')return;const tab=window.open('about:blank','_blank');if(tab)tab.opener=null;const ok=await copy(r.type==='kiralik'?RENT:SALE,$('copyAndOpen'));if(!ok){if(tab)tab.close();return;}if(tab){tab.location.replace(r.url);}else{toast('Mesaj kopyalandı. Açılır pencere engellendi; tarayıcı ayarlarından izin verin.');}});
  $('excludeListing').addEventListener('click',()=>{if(r.status==='excluded'){r.status=r.previousStatus||'ready';delete r.previousStatus;r.notice='Tercih geri alındı.';}else{r.previousStatus=r.status;r.status='excluded';r.notice='Tercih edilmiyor; ilan gizlendi.';}closeDetails();save();});
  $('markSent').addEventListener('click',()=>{if(r.status!=='ready')return;r.status='sent';r.notice='Kullanıcı gönderdim olarak işaretledi. Gerçek gönderim site üzerinden doğrulanmadı.';save();});
- $('classify').addEventListener('click',()=>{if(r.status==='excluded'){toast('Önce Tercihimi Geri Al seçeneğini kullanın.');return;}r.reply=$('reply').value;const c=classify(r.reply);r.status=c.status;r.notice=c.note;save();if(c.status==='positive')toast('Olumlu dönüş: manuel yanıt bekliyor.');});
- $('copyReply').addEventListener('click',()=>{if(r.status==='excluded'){toast('Tercih edilmeyen ilan için mesaj önerilmez.');return;}const replyClass=classify(r.reply||'');if(replyClass.status==='blockedReply'){toast('İletişim yasağı var; yanıt gönderilmez.');return;}const msg=replyClass.status==='positive'?REPLY_POSITIVE:replyClass.status==='negative'?CLOSE:replyClass.status==='manual'&&/bir sure kendim|kendim ilgilenecegim|ileride olabilir|daha sonra|simdilik|sonra goruselim|su an dusunmuyorum|biraz bekle/.test(normalize(r.reply))?REPLY_LATER:null;if(msg)copy(msg,$('copyReply'));else toast('Bu yanıt manuel değerlendirme gerektiriyor.');});
+
 }
 async function copy(s,button){
  let copied=false;
@@ -528,9 +522,7 @@ async function copy(s,button){
  }
  return copied;
 }
-$('importBtn').addEventListener('click',()=>{const b=$('mailText').value.trim();if(!b){toast('E-posta metnini yapıştırın.');return;}if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b)){toast('Yalnızca e-posta adresi değil, bildirim içeriği veya ilan dosyası gerekli.');return;}const n=importMail(b);if(!n)toast('İlan bağlantısı bulunamadı; lütfen ilan dosyasını yükleyin.');});
 $('importFileBtn').addEventListener('click',async()=>{const f=$('importFile').files&&$('importFile').files[0];if(!f){toast('Önce indirilen dosyayı seçin.');return;}if(f.size>2000000){toast('Dosya 2 MB sınırını aşıyor.');return;}try{const body=await f.text();if(f.name.toLowerCase().endsWith('.json'))importData(JSON.parse(body));else{const n=importMail(body);if(!n)toast('Bu dosyada tanınan ilan bağlantısı yok.');}}catch(e){toast('Dosya okunamadı: '+String(e.message||e));}});
-$('clearMailBtn').addEventListener('click',()=>$('mailText').value='');
 $('labelFileBtn').addEventListener('click',()=>$('labelFile').click());
 $('labelFile').addEventListener('change',async e=>{
  const file=e.target.files&&e.target.files[0];if(!file)return;
@@ -586,7 +578,7 @@ $('closeDetails').addEventListener('click',closeDetails);
 $('detailBackdrop').addEventListener('click',e=>{if(e.target===$('detailBackdrop'))closeDetails();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&detailOpen)closeDetails();});
 $('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),listings:rows,favoriteSearchLabels:Object.entries(searchLabels).map(([id,labels])=>({id,labels}))},null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download='ilan-asistani-yedek.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);});
-$('speakBtn').addEventListener('click',()=>{if(!('speechSynthesis' in window)){toast('Bu tarayıcı seslendirmeyi desteklemiyor.');return;}speechSynthesis.cancel();const msg='Toplam '+rows.length+' farklı ilan var. '+rows.filter(r=>r.status==='review').length+' ilan türü belirsiz. '+rows.filter(r=>r.status==='ready').length+' ilan için mesaj hazır. '+rows.filter(r=>['positive','manual'].includes(r.status)).length+' müşteri dönüşü sizin yanıtınızı bekliyor.';const u=new SpeechSynthesisUtterance(msg);u.lang='tr-TR';speechSynthesis.speak(u);});
+$('speakBtn').addEventListener('click',()=>{if(!('speechSynthesis' in window)){toast('Bu tarayıcı seslendirmeyi desteklemiyor.');return;}speechSynthesis.cancel();const msg='Toplam '+rows.length+' farklı ilan var. '+rows.filter(r=>r.status==='review').length+' ilan türü belirsiz. '+rows.filter(r=>r.status==='ready').length+' ilan için mesaj hazır.';const u=new SpeechSynthesisUtterance(msg);u.lang='tr-TR';speechSynthesis.speak(u);});
 $('passwordLogin').addEventListener('click',signInPassword);
 $('magicLogin').addEventListener('click',sendSignInLink);
 $('verifyCode').addEventListener('click',verifyEmailCode);
