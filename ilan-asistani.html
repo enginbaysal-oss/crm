@@ -444,13 +444,15 @@ function render(){
  $('countReady').textContent=rows.filter(r=>r.status==='ready').length;
  $('countReply').textContent=rows.filter(r=>['manual','positive'].includes(r.status)).length;
  const q=normalize($('search').value),deal=$('dealFilter').value,property=$('propertyFilter').value,f=$('filter').value,sort=$('sort').value,searchName=$('favoriteSearchFilter').value;
- const a=rows.filter(r=>(showHistory||r.lastNotifiedOn===todayTR())&&(showExcluded||r.status==='excluded'?showExcluded:true)&&(deal==='all'||r.type===deal)&&(property==='all'||kind(r)===property)&&inStatus(r,f)&&(searchName==='all'||searchName==='__none__'&&!searchNames(r.id).length||searchNames(r.id).includes(searchName))&&(!q||normalize([r.title,r.id,r.price,r.type,...searchNames(r.id)].join(' ')).includes(q)));
+ const hasDatedRows=rows.some(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.lastNotifiedOn||''));
+ const a=rows.filter(r=>(showHistory||!hasDatedRows||r.lastNotifiedOn===todayTR())&&(showExcluded||r.status==='excluded'?showExcluded:true)&&(deal==='all'||r.type===deal)&&(property==='all'||kind(r)===property)&&inStatus(r,f)&&(searchName==='all'||searchName==='__none__'&&!searchNames(r.id).length||searchNames(r.id).includes(searchName))&&(!q||normalize([r.title,r.id,r.price,r.type,...searchNames(r.id)].join(' ')).includes(q)));
  if(sort==='price-asc')a.sort((x,y)=>numericPrice(x)-numericPrice(y));
  else if(sort==='price-desc')a.sort((x,y)=>numericPrice(y)-numericPrice(x));
  else if(sort==='name')a.sort((x,y)=>x.title.localeCompare(y.title,'tr'));
  else a.sort((x,y)=>Number(y.id)-Number(x.id));
  $('resultCount').textContent=a.length+' / '+rows.filter(r=>showExcluded||r.status!=='excluded').length+' ilan';
- $('dateToggle').textContent=showHistory?'Yalnızca bugünü göster':'Geçmişi göster';
+ $('dateToggle').textContent=showHistory?'Yalnızca bugünü göster':!hasDatedRows?'Tarih bekleniyor · tüm ilanlar':'Geçmişi göster';
+ $('dateToggle').disabled=!hasDatedRows;
  $('excludedToggle').textContent=showExcluded?'Tercih etmediklerimi gizle':'Tercih etmediklerim ('+rows.filter(r=>r.status==='excluded').length+')';
  $('list').innerHTML=a.length?a.map(r=>{
    const t=r.type==='kiralik'?'Kiralık':r.type==='satilik'?'Satılık':'Belirsiz';
