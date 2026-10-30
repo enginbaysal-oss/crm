@@ -541,7 +541,7 @@ $('labelFile').addEventListener('change',async e=>{
  finally{e.target.value='';}
 });
 let syncingFeed=false;
-async async function refreshFeed(){
+async function refreshFeed(){
  if(syncingFeed||!currentUser)return;
  syncingFeed=true;
  $('refreshFeedBtn').disabled=true;
