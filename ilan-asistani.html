@@ -450,7 +450,7 @@ function render(){
  else if(sort==='price-desc')a.sort((x,y)=>numericPrice(y)-numericPrice(x));
  else if(sort==='name')a.sort((x,y)=>x.title.localeCompare(y.title,'tr'));
  else a.sort((x,y)=>Number(y.id)-Number(x.id));
- $('resultCount').textContent=a.length+' / '+rows.filter(r=>showExcluded||r.status!=='excluded').length+' ilan';
+ $('resultCount').textContent=a.length+' / '+rows.filter(r=>(showHistory||!hasDatedRows||r.lastNotifiedOn===todayTR())&&(showExcluded||r.status!=='excluded')).length+' ilan';
  $('dateToggle').textContent=showHistory?'Yalnızca bugünü göster':!hasDatedRows?'Tarih bekleniyor · tüm ilanlar':'Geçmişi göster';
  $('dateToggle').disabled=!hasDatedRows;
  $('excludedToggle').textContent=showExcluded?'Tercih etmediklerimi gizle':'Tercih etmediklerim ('+rows.filter(r=>r.status==='excluded').length+')';
@@ -461,7 +461,7 @@ function render(){
    '<span class="type-cell"><span class="type-text">'+t+' · '+(kind(r)==='ticari'?'Ticari':kind(r)==='konut'?'Konut':'Diğer')+'</span></span>'+
    '<span class="price-cell"><span class="price">'+escapeHtml(r.price)+'</span></span>'+
    '<span class="status-cell"><span class="pill '+cssStatus(r.status)+'">'+escapeHtml(label(r))+'</span><span class="view">İncele ›</span></span></button>';
- }).join(''):'<div class="empty">Bugün tarihli ilan bulunamadı. Eski veya tarihi bilinmeyen ilanlar için “Geçmişi göster” düğmesine basın.</div>';
+ }).join(''):'<div class="empty">'+(showExcluded?'Tercih edilmeyen ilan bulunamadı.':!hasDatedRows?'Henüz ilan yok veya filtrelerle eşleşmiyor.':showHistory?'Bu filtrelere uygun ilan bulunamadı.':'Bugün tarihli ilan bulunamadı. Geçmiş ilanlar için “Geçmişi göster” düğmesine basın.')+'</div>';
  $('list').querySelectorAll('[data-id]').forEach(btn=>btn.addEventListener('click',()=>openDetails(btn.dataset.id,btn)));
  if(detailOpen)showDetail();
 }
@@ -479,7 +479,7 @@ function showDetail(){
  '<div class="note" id="notice">'+escapeHtml(r.notice||'Açıklama kontrolü zorunlu değil.')+'</div>'+
  '<label for="dealType">İlan türü</label><select id="dealType" '+(locked?'disabled':'')+'><option value="satilik">Satılık</option><option value="kiralik">Kiralık</option><option value="belirsiz">Belirsiz</option></select>'+
  '<hr><h2>İlan sahibine ilk mesaj</h2><textarea class="message" id="initialMessage" readonly spellcheck="false" aria-label="İlan sahibine gönderilecek mesaj" style="min-height:112px;display:block;">'+escapeHtml(message)+'</textarea>'+
- '<div class="controls" style="margin-top:10px"><button id="copyAndOpen" class="primary" '+(canPrepare?'':'disabled')+'>Mesajı Kopyala ve İlanı Aç ↗</button><button id="excludeListing">Tercih Etmiyorum</button></div><div class="controls" style="margin-top:8px"><button id="markSent" '+(canPrepare?'':'disabled')+'>Gönderdim, Kaydet</button></div>'+
+ '<div class="controls" style="margin-top:10px"><button id="copyAndOpen" class="primary" '+(canPrepare?'':'disabled')+'>Mesajı Kopyala ve İlanı Aç ↗</button><button id="excludeListing">'+(r.status==='excluded'?'Tercihimi Geri Al':'Tercih Etmiyorum')+'</button></div><div class="controls" style="margin-top:8px"><button id="markSent" '+(canPrepare?'':'disabled')+'>Gönderdim, Kaydet</button></div>'+
  '<div class="small" style="margin-top:7px"><b>Sıra:</b> “Mesajı Kopyala ve İlanı Aç” düğmesine basın. Mesaj kopyalanır ve ilan yeni sekmede açılır. İletişim istemeyenlere yazmayın; uygunsa Ctrl + V ile yapıştırın. Mesaj otomatik gönderilmez. İletişim istemeyenlere yazmayın. “Gönderdim” yalnızca sizin tuttuğunuz kayıttır.</div>'+
  '<hr><h2>İlan sahibinin cevabı</h2><label for="reply">Gelen yanıt</label><textarea id="reply" placeholder="Örn. Bir süre kendim ilgileneceğim.">'+escapeHtml(r.reply||'')+'</textarea>'+
  '<div class="controls" style="margin-top:10px"><button id="classify" class="primary">Yanıtı Değerlendir</button><button id="copyReply" '+(['positive','negative'].includes(r.status)||r.status==='manual'&&/bir sure kendim|kendim ilgilenecegim|ileride olabilir|daha sonra|simdilik|sonra goruselim|su an dusunmuyorum|biraz bekle/.test(normalize(r.reply))?'':'disabled')+'>Hazır Yanıtı Kopyala</button></div>'+
@@ -489,8 +489,8 @@ function showDetail(){
  $('copyAndOpen').addEventListener('click',async()=>{if(r.status!=='ready')return;const tab=window.open('about:blank','_blank');if(tab)tab.opener=null;const ok=await copy(r.type==='kiralik'?RENT:SALE,$('copyAndOpen'));if(!ok){if(tab)tab.close();return;}if(tab){tab.location.replace(r.url);}else{toast('Mesaj kopyalandı. Açılır pencere engellendi; tarayıcı ayarlarından izin verin.');}});
  $('excludeListing').addEventListener('click',()=>{if(r.status==='excluded'){r.status=r.previousStatus||'ready';delete r.previousStatus;r.notice='Tercih geri alındı.';}else{r.previousStatus=r.status;r.status='excluded';r.notice='Tercih edilmiyor; ilan gizlendi.';}closeDetails();save();});
  $('markSent').addEventListener('click',()=>{if(r.status!=='ready')return;r.status='sent';r.notice='Kullanıcı gönderdim olarak işaretledi. Gerçek gönderim site üzerinden doğrulanmadı.';save();});
- $('classify').addEventListener('click',()=>{r.reply=$('reply').value;const c=classify(r.reply);r.status=c.status;r.notice=c.note;save();if(c.status==='positive')toast('Olumlu dönüş: manuel yanıt bekliyor.');});
- $('copyReply').addEventListener('click',()=>{const replyClass=classify(r.reply||'');if(replyClass.status==='blockedReply'){toast('İletişim yasağı var; yanıt gönderilmez.');return;}const msg=replyClass.status==='positive'?REPLY_POSITIVE:replyClass.status==='negative'?CLOSE:replyClass.status==='manual'&&/bir sure kendim|kendim ilgilenecegim|ileride olabilir|daha sonra|simdilik|sonra goruselim|su an dusunmuyorum|biraz bekle/.test(normalize(r.reply))?REPLY_LATER:null;if(msg)copy(msg,$('copyReply'));else toast('Bu yanıt manuel değerlendirme gerektiriyor.');});
+ $('classify').addEventListener('click',()=>{if(r.status==='excluded'){toast('Önce Tercihimi Geri Al seçeneğini kullanın.');return;}r.reply=$('reply').value;const c=classify(r.reply);r.status=c.status;r.notice=c.note;save();if(c.status==='positive')toast('Olumlu dönüş: manuel yanıt bekliyor.');});
+ $('copyReply').addEventListener('click',()=>{if(r.status==='excluded'){toast('Tercih edilmeyen ilan için mesaj önerilmez.');return;}const replyClass=classify(r.reply||'');if(replyClass.status==='blockedReply'){toast('İletişim yasağı var; yanıt gönderilmez.');return;}const msg=replyClass.status==='positive'?REPLY_POSITIVE:replyClass.status==='negative'?CLOSE:replyClass.status==='manual'&&/bir sure kendim|kendim ilgilenecegim|ileride olabilir|daha sonra|simdilik|sonra goruselim|su an dusunmuyorum|biraz bekle/.test(normalize(r.reply))?REPLY_LATER:null;if(msg)copy(msg,$('copyReply'));else toast('Bu yanıt manuel değerlendirme gerektiriyor.');});
 }
 async function copy(s,button){
  let copied=false;
