@@ -140,7 +140,7 @@ main{max-width:1200px}
  <span><b id="countAll">0</b> toplam ilan</span><span><b id="countReady">0</b> mesaj hazır</span><span><b id="countReply">0</b> manuel yanıt</span><span><b id="countPending">0</b> türü belirsiz</span>
 </div>
 <section class="card workspace" aria-label="Favori ilan listesi">
- <div class="workspace-header"><div><h2>Favori İlanlarım</h2><p class="small">İlanları filtreleyin; incelemek istediğiniz satıra tıklayın.</p></div><div class="controls"><button id="excludedToggle" type="button">Tercih etmediklerim (0)</button><strong id="resultCount" class="result-count" aria-live="polite">0 ilan</strong></div></div>
+ <div class="workspace-header"><div><h2>Favori İlanlarım</h2><p class="small">İlanları filtreleyin; incelemek istediğiniz satıra tıklayın.</p></div><div class="controls"><button id="dateToggle" type="button">Geçmişi göster</button><button id="excludedToggle" type="button">Tercih etmediklerim (0)</button><strong id="resultCount" class="result-count" aria-live="polite">0 ilan</strong></div></div>
  <div class="filters" aria-label="İlan filtreleri">
   <div class="filters-heading"><h3>İlan Filtreleri</h3><div class="controls" style="flex:0 0 auto"><button type="button" id="labelFileBtn" class="reset-btn">Favori Arama Etiketlerini Yükle</button><button type="button" id="resetFilters" class="reset-btn">Filtreleri Temizle</button></div></div>
   <input type="file" id="labelFile" accept=".json,application/json" hidden aria-label="Özel favori arama etiket dosyası">
@@ -436,19 +436,21 @@ function closeDetails(){
  if(focusReturn&&focusReturn.isConnected)focusReturn.focus();
  focusReturn=null;
 }
-let showExcluded=false;
+let showExcluded=false,showHistory=false;
+const todayTR=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Istanbul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 function render(){
  $('countAll').textContent=rows.length;
  $('countPending').textContent=rows.filter(r=>r.status==='review').length;
  $('countReady').textContent=rows.filter(r=>r.status==='ready').length;
  $('countReply').textContent=rows.filter(r=>['manual','positive'].includes(r.status)).length;
  const q=normalize($('search').value),deal=$('dealFilter').value,property=$('propertyFilter').value,f=$('filter').value,sort=$('sort').value,searchName=$('favoriteSearchFilter').value;
- const a=rows.filter(r=>(showExcluded||r.status==='excluded'?showExcluded:true)&&(deal==='all'||r.type===deal)&&(property==='all'||kind(r)===property)&&inStatus(r,f)&&(searchName==='all'||searchName==='__none__'&&!searchNames(r.id).length||searchNames(r.id).includes(searchName))&&(!q||normalize([r.title,r.id,r.price,r.type,...searchNames(r.id)].join(' ')).includes(q)));
+ const a=rows.filter(r=>(showHistory||r.lastNotifiedOn===todayTR())&&(showExcluded||r.status==='excluded'?showExcluded:true)&&(deal==='all'||r.type===deal)&&(property==='all'||kind(r)===property)&&inStatus(r,f)&&(searchName==='all'||searchName==='__none__'&&!searchNames(r.id).length||searchNames(r.id).includes(searchName))&&(!q||normalize([r.title,r.id,r.price,r.type,...searchNames(r.id)].join(' ')).includes(q)));
  if(sort==='price-asc')a.sort((x,y)=>numericPrice(x)-numericPrice(y));
  else if(sort==='price-desc')a.sort((x,y)=>numericPrice(y)-numericPrice(x));
  else if(sort==='name')a.sort((x,y)=>x.title.localeCompare(y.title,'tr'));
  else a.sort((x,y)=>Number(y.id)-Number(x.id));
  $('resultCount').textContent=a.length+' / '+rows.filter(r=>showExcluded||r.status!=='excluded').length+' ilan';
+ $('dateToggle').textContent=showHistory?'Yalnızca bugünü göster':'Geçmişi göster';
  $('excludedToggle').textContent=showExcluded?'Tercih etmediklerimi gizle':'Tercih etmediklerim ('+rows.filter(r=>r.status==='excluded').length+')';
  $('list').innerHTML=a.length?a.map(r=>{
    const t=r.type==='kiralik'?'Kiralık':r.type==='satilik'?'Satılık':'Belirsiz';
@@ -457,7 +459,7 @@ function render(){
    '<span class="type-cell"><span class="type-text">'+t+' · '+(kind(r)==='ticari'?'Ticari':kind(r)==='konut'?'Konut':'Diğer')+'</span></span>'+
    '<span class="price-cell"><span class="price">'+escapeHtml(r.price)+'</span></span>'+
    '<span class="status-cell"><span class="pill '+cssStatus(r.status)+'">'+escapeHtml(label(r))+'</span><span class="view">İncele ›</span></span></button>';
- }).join(''):'<div class="empty">Bu filtrelere uygun ilan yok. “Filtreleri Temizle” seçeneğini kullanabilirsiniz.</div>';
+ }).join(''):'<div class="empty">Bugün tarihli ilan bulunamadı. Eski veya tarihi bilinmeyen ilanlar için “Geçmişi göster” düğmesine basın.</div>';
  $('list').querySelectorAll('[data-id]').forEach(btn=>btn.addEventListener('click',()=>openDetails(btn.dataset.id,btn)));
  if(detailOpen)showDetail();
 }
@@ -545,8 +547,8 @@ async function refreshFeed(){
  $('refreshFeedBtn').disabled=true;
  $('feedStatus').textContent='Kişiye özel ilanlar kontrol ediliyor...';
  try{
-   let res=await apiCall('/rest/v1/crm_favorite_search_listings?select=listing_id,title,url,price,deal_type,search_labels&order=listing_id.desc&limit=2000');
-   if(res.status===401 && await checkUser())res=await apiCall('/rest/v1/crm_favorite_search_listings?select=listing_id,title,url,price,deal_type,search_labels&order=listing_id.desc&limit=2000');
+   let res=await apiCall('/rest/v1/crm_favorite_search_listings?select=listing_id,title,url,price,deal_type,search_labels,last_notified_on&order=listing_id.desc&limit=2000');
+   if(res.status===401 && await checkUser())res=await apiCall('/rest/v1/crm_favorite_search_listings?select=listing_id,title,url,price,deal_type,search_labels,last_notified_on&order=listing_id.desc&limit=2000');
    if(!res.ok)throw new Error('Özel listeye erişilemedi (HTTP '+res.status+')');
    const items=await res.json();
    if(!Array.isArray(items))throw new Error('Beklenmeyen sunucu yanıtı');
@@ -558,6 +560,8 @@ async function refreshFeed(){
        if(addSearchName(item.listing_id,name))labelsAdded++;
      }
    }
+   for(const item of items){const row=rows.find(x=>x.id===String(item.listing_id));if(row&&/^\d{4}-\d{2}-\d{2}$/.test(item.last_notified_on||''))row.lastNotifiedOn=item.last_notified_on;}
+   save();
    if(labelsAdded)saveSearchLabels();
    $('feedStatus').textContent='✓ Hesabınıza ait '+items.length+' ilan kontrol edildi. '+added+' yeni ilan, '+labelsAdded+' yeni etiket eşleştirildi.';
  }catch(e){
@@ -568,6 +572,7 @@ async function refreshFeed(){
  }
 }
 $('excludedToggle').addEventListener('click',()=>{showExcluded=!showExcluded;render();});
+$('dateToggle').addEventListener('click',()=>{showHistory=!showHistory;render();});
 $('refreshFeedBtn').addEventListener('click',refreshFeed);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentUser)refreshFeed();});
 $('search').addEventListener('input',render);
