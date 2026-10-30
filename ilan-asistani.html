@@ -187,6 +187,10 @@ main{max-width:1200px}
 (function(){
 'use strict';
 const KEY='engin-crm-ilan-asistani-v1';
+const SENT_KEY='engin-crm-ilan-asistani-sent-v1';
+function sentLedger(){try{return JSON.parse(localStorage.getItem(keyFor(SENT_KEY))||'{}')||{};}catch(e){return {};}}
+function rememberSent(id){const ledger=sentLedger();ledger[String(id)]=new Date().toISOString();localStorage.setItem(keyFor(SENT_KEY),JSON.stringify(ledger));}
+function applySentLedger(){const ledger=sentLedger();for(const r of rows){if(ledger[String(r.id)]&&r.status!=='excluded'){r.status='sent';r.notice='Mesaj gönderildi olarak kaydedildi.';}}}
 const LEGACY_OWNER_ID='dd1c8258-2d3b-4428-aebd-5e2b9cda97ec';
 const SESSION_KEY='engin-crm-private-session-v1';
 const API_BASE='https://jcjerwvibjetomqeelsy.supabase.co';
@@ -221,7 +225,7 @@ async function enterPrivate(){
  const user=await checkUser();
  if(!user){privateSession=null;localStorage.removeItem(SESSION_KEY);$('authStatus').textContent='Oturum doğrulanamadı. Giriş yapın.';return false;}
  currentUser=user;transferLegacyData();
- rows=[];searchLabels={};load();fillSearchFilter();
+ rows=[];searchLabels={};load();applySentLedger();fillSearchFilter();
  $('authGate').hidden=true;$('privateMain').hidden=false;
  render();await refreshFeed();return true;
 }
@@ -336,7 +340,7 @@ function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;',
 function normalize(s){return String(s||'').toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ı/g,'i').replace(/ş/g,'s').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ö/g,'o').replace(/ç/g,'c').replace(/\s+/g,' ').trim();}
 function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',3400);}
 function load(){loadSearchLabels();try{const x=JSON.parse(localStorage.getItem(keyFor(KEY))||'[]');rows=Array.isArray(x)?x.filter(r=>r&&/^\d{8,12}$/.test(r.id)):[];for(const r of rows){if(r.status==='review' && !String(r.description||'').trim() && ['satilik','kiralik'].includes(r.type)){if(agencyAdvertiser(r.title)){r.status='blocked';r.notice='İlan başlığında emlak ofisi ibaresi var.';}else{r.status='ready';r.notice='İlan türüne göre mesaj hazır; açıklama incelenmedi.';}}}}catch(e){rows=[];toast('Kayıtlar okunamadı. Yedeğiniz varsa koruyun.');}}
-function save(){try{localStorage.setItem(keyFor(KEY),JSON.stringify(rows));}catch(e){toast('Yerel depolama dolu veya kapalı. Yedek alınız.');} render();}
+function save(){try{applySentLedger();localStorage.setItem(keyFor(KEY),JSON.stringify(rows));}catch(e){toast('Yerel depolama dolu veya kapalı. Yedek alınız.');} render();}
 function targetUrl(link){
   try{
     let u=new URL(link);
@@ -483,7 +487,7 @@ function showDetail(){
  $('dealType').addEventListener('change',e=>{if(locked)return;r.type=e.target.value;prepare(r);save();});
  $('copyAndOpen').addEventListener('click',async()=>{if(r.status!=='ready')return;const tab=window.open('about:blank','_blank');if(tab)tab.opener=null;const ok=await copy(r.type==='kiralik'?RENT:SALE,$('copyAndOpen'));if(!ok){if(tab)tab.close();return;}if(tab){tab.location.replace(r.url);}else{toast('Mesaj kopyalandı. Açılır pencere engellendi; tarayıcı ayarlarından izin verin.');}});
  $('excludeListing').addEventListener('click',()=>{if(r.status==='excluded'){r.status=r.previousStatus||'ready';delete r.previousStatus;r.notice='Tercih geri alındı.';}else{r.previousStatus=r.status;r.status='excluded';r.notice='Tercih edilmiyor; ilan gizlendi.';}closeDetails();save();});
- $('markSent').addEventListener('click',()=>{if(r.status!=='ready')return;r.status='sent';r.notice='Kullanıcı gönderdim olarak işaretledi. Gerçek gönderim site üzerinden doğrulanmadı.';save();});
+ $('markSent').addEventListener('click',()=>{if(r.status!=='ready')return;r.status='sent';r.notice='Mesaj gönderildi olarak kaydedildi.';try{rememberSent(r.id);}catch(e){toast('Gönderim kaydı saklanamadı; tarayıcı depolama iznini kontrol edin.');}save();});
 
 }
 async function copy(s,button){
@@ -548,6 +552,7 @@ async function refreshFeed(){
    if(!Array.isArray(items))throw new Error('Beklenmeyen sunucu yanıtı');
    const data={listings:items.map(x=>({id:x.listing_id,title:x.title,url:x.url,price:x.price,type:x.deal_type}))};
    const added=importData(data,true);
+   applySentLedger();
    let labelsAdded=0;
    for(const item of items){
      if(Array.isArray(item.search_labels))for(const name of item.search_labels){
