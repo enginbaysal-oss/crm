@@ -16,6 +16,7 @@ a{color:var(--blue)}
 button,.btn{font:inherit;border:1px solid #cbd2d3;background:var(--white);border-radius:9px;color:var(--ink);padding:9px 13px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}
 button:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid #d6a968;outline-offset:2px}
 button:hover,.btn:hover{border-color:var(--bronze)}
+.home-back-btn{background:#e56b24;color:#fff;border-color:#c75517;font-weight:700}.home-back-btn:hover{background:#ca571a;border-color:#b54b11;color:#fff}.home-back-btn:focus-visible{outline:3px solid #f3ad72;outline-offset:2px}
 button.primary{background:var(--ink);border-color:var(--ink);color:#fff}
 button:disabled{opacity:.5;cursor:not-allowed}
 input,select,textarea{width:100%;border:1px solid #cbd2d3;border-radius:9px;padding:11px;background:#fff;color:var(--ink);font:inherit}
@@ -133,7 +134,7 @@ main{max-width:1200px}
  <p id="authStatus" role="status" class="small" style="margin-top:12px">Giriş yapmadan özel ilanlar görüntülenmez.</p>
 </section>
 <main id="privateMain" hidden>
-<header class="page-head"><div><div class="eyebrow">Emlak CRM / İlan Asistanı</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlanları görüntüleme</div></div><div class="controls"><a class="btn" href="https://enginbaysal-oss.github.io/EmlakCRM-Web/">← EmlakCRM Ana Sayfaya Dön</a><button type="button" id="logoutBtn">Oturumu Kapat</button></div></header>
+<header class="page-head"><div><div class="eyebrow">Emlak CRM / İlan Asistanı</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlanları görüntüleme</div></div><div class="controls"><a class="btn home-back-btn" href="https://enginbaysal-oss.github.io/EmlakCRM-Web/">← Ana Sayfaya Dön</a><button type="button" id="logoutBtn">Oturumu Kapat</button></div></header>
 
 <div class="feed-bar"><div><strong>Kişiye özel favori ilanlar • Otomatik senkronizasyon</strong><div id="feedStatus" role="status">Güncel ilanlar kontrol ediliyor...</div></div><button id="refreshFeedBtn" class="primary" type="button">↻ Yenile</button></div>
 <div class="summary-line" aria-label="İlan özeti">
