@@ -8,15 +8,21 @@
  const base="https://tffvwxskvjuxoekwgdef.supabase.co",key="sb_publishable_ADLnhwviFBqWtBkq94Adag_ULlAuzUe";
  const home="https://enginbaysal-oss.github.io/EmlakCRM-Web/#account";
  try{
-  const saved=JSON.parse(sessionStorage.getItem("emlakcrm_auth_session_v1")||"null");
+  // EmlakCRM "Beni hatırla" seçildiyse oturumu diğer GitHub Pages modüllerinde de geri yükle.
+  const sessionKey="emlakcrm_auth_session_v1",rememberKey="emlakcrm_auth_remember_v1";
+  const savedRaw=sessionStorage.getItem(sessionKey)||localStorage.getItem(rememberKey);
+  const saved=JSON.parse(savedRaw||"null");
   if(!saved?.access_token)throw Error("Oturum bulunamadı");
+  if(!sessionStorage.getItem(sessionKey))sessionStorage.setItem(sessionKey,JSON.stringify(saved));
   let token=saved.access_token;
   let userRes=await fetch(base+"/auth/v1/user",{headers:{apikey:key,Authorization:"Bearer "+token}});
   if(!userRes.ok&&saved.refresh_token){
    const refresh=await fetch(base+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{apikey:key,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:saved.refresh_token})});
    if(refresh.ok){
     const updated=await refresh.json();token=updated.access_token;
-    sessionStorage.setItem("emlakcrm_auth_session_v1",JSON.stringify({...saved,access_token:token,refresh_token:updated.refresh_token,expires_at:Date.now()+(updated.expires_in||3600)*1000}));
+    const renewed=JSON.stringify({...saved,access_token:token,refresh_token:updated.refresh_token,expires_at:Date.now()+(updated.expires_in||3600)*1000});
+    sessionStorage.setItem(sessionKey,renewed);
+    if(localStorage.getItem(rememberKey))localStorage.setItem(rememberKey,renewed);
     userRes=await fetch(base+"/auth/v1/user",{headers:{apikey:key,Authorization:"Bearer "+token}});
    }
   }
