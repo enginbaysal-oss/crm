@@ -38,6 +38,8 @@ window.__emlakcrmVerifiedAccountPromise=(async function(){
   }
   if(!allowed)throw Error("Aktif abonelik yok");
   if(!user?.id||!user?.email)throw Error("Giriş hesabı doğrulanamadı");
+  const activeAccount=localStorage.getItem("emlakcrm_active_account_v1");
+  if(activeAccount&&activeAccount!==user.id)throw Error("Tarayıcıda başka bir EmlakCRM hesabı aktif");
   window.__emlakcrmVerifiedAccount={id:user.id,email:String(user.email).trim().toLowerCase()};
   document.getElementById("emlakcrm-access-pending")?.remove();
   return window.__emlakcrmVerifiedAccount;
