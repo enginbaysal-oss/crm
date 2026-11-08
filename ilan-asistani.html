@@ -186,6 +186,16 @@ main{max-width:1200px}
 <main id="privateMain" hidden>
 <header class="page-head"><div><div class="eyebrow">Emlak CRM / İlan Asistanı</div><h1>İlan Asistanı</h1><div class="small">Favori arama bildirimleri • İlanları görüntüleme</div></div><div class="controls"><a class="btn home-back-btn" href="https://enginbaysal-oss.github.io/EmlakCRM-Web/">← Ana Sayfaya Dön</a><button type="button" id="logoutBtn">Oturumu Kapat</button></div></header>
 
+<section class="card" aria-label="İlan bildirim e-postası" style="margin:14px 0;padding:15px 18px">
+ <div class="eyebrow">Kişisel İlan Kaynağım</div>
+ <h2 style="margin:6px 0 9px">İlan Bildirim E-postası</h2>
+ <p class="small">Sahibinden.com favori arama bildirimlerinizin geldiği adresi yazın. Adres hesabınıza özel kaydedilir. E-posta kutusuna erişim izni verilmeden otomatik okuma başlamaz.</p>
+ <div class="controls" style="display:flex;align-items:end;flex-wrap:wrap;gap:9px">
+  <label style="flex:1;min-width:230px">Bildirimlerin geldiği e-posta<input type="email" id="listingSourceEmail" autocomplete="email" placeholder="ornek@gmail.com" maxlength="254" style="display:block;width:100%;margin-top:5px"></label>
+  <button type="button" class="primary" id="saveListingSourceEmail">Kaydet</button>
+ </div>
+ <p id="listingSourceStatus" class="small" role="status" style="margin:9px 0 0">E-posta kaynağı kontrol ediliyor…</p>
+</section>
 <div class="feed-bar"><div><strong>Kişiye özel favori ilanlar • Otomatik senkronizasyon</strong><div id="feedStatus" role="status">Güncel ilanlar kontrol ediliyor...</div></div><button id="refreshFeedBtn" class="primary" type="button">↻ Yenile</button></div>
 <div class="summary-line" aria-label="İlan özeti">
  <span><b id="countAll">0</b> toplam ilan</span><span><b id="countReady">0</b> mesaj hazır</span><span><b id="countPending">0</b> türü belirsiz</span>
@@ -279,6 +289,34 @@ function transferLegacyData(){
  }
  // Do not silently delete legacy data before the user can verify the migration.
 }
+async function loadListingSourceEmail(){
+ const field=$('listingSourceEmail'),status=$('listingSourceStatus');
+ if(!currentUser?.id)return;
+ status.textContent='Kayıtlı bildirim adresi kontrol ediliyor…';
+ try{
+  const response=await apiCall('/rest/v1/crm_listing_mail_sources?select=notification_email,connection_status&user_id=eq.'+encodeURIComponent(currentUser.id)+'&limit=1');
+  if(!response.ok)throw Error('HTTP '+response.status);
+  const rows=await response.json(),saved=rows?.[0];
+  field.value=saved?.notification_email||'';
+  status.textContent=saved?.notification_email?'Adres kayıtlı. E-posta okuma bağlantısı henüz etkin değil.':'Henüz bildirim e-postası tanımlanmadı.';
+ }catch(error){status.textContent='Adres yüklenemedi: '+String(error.message||error);}
+}
+async function saveListingSourceEmail(){
+ const field=$('listingSourceEmail'),status=$('listingSourceStatus'),button=$('saveListingSourceEmail');
+ const email=field.value.trim().toLowerCase();
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)||email.length>254){status.textContent='Geçerli bir e-posta adresi yazın.';return;}
+ if(!currentUser?.id||!privateSession?.access_token){status.textContent='Önce EmlakCRM hesabınıza giriş yapın.';return;}
+ button.disabled=true;status.textContent='Kaydediliyor…';
+ try{
+  const response=await apiCall('/rest/v1/crm_listing_mail_sources?on_conflict=user_id',{
+   method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+   body:JSON.stringify({user_id:currentUser.id,notification_email:email,connection_status:'not_connected'})
+  });
+  if(!response.ok)throw Error('HTTP '+response.status);
+  status.textContent='Adres hesabınıza kaydedildi. Posta kutusuna erişim henüz bağlanmadı; bu alan tek başına otomatik ilan çekmez.';
+ }catch(error){status.textContent='Kaydedilemedi: '+String(error.message||error);}
+ finally{button.disabled=false;}
+}
 async function enterPrivate(){
  const account=await window.__emlakcrmVerifiedAccountPromise;
  if(!account?.id||!account.email)throw Error('EmlakCRM oturumu doğrulanamadı');
@@ -294,7 +332,7 @@ async function enterPrivate(){
  currentUser=user;transferLegacyData();
  rows=[];searchLabels={};load();applySentLedger();fillSearchFilter();
  $('authLoading').hidden=true;$('authGate').hidden=true;$('privateMain').hidden=false;
- render();await refreshFeed();await syncContactStatus();return true;
+ render();await loadListingSourceEmail();await refreshFeed();await syncContactStatus();return true;
 }
 function reportAuth(s){$('authStatus').textContent=s;}
 async function signInPassword(){
@@ -680,6 +718,7 @@ $('passwordLogin').addEventListener('click',signInPassword);
 $('magicLogin').addEventListener('click',sendSignInLink);
 $('verifyCode').addEventListener('click',verifyEmailCode);
 $('logoutBtn').addEventListener('click',logout);
+$('saveListingSourceEmail').addEventListener('click',saveListingSourceEmail);
 restoreAuth();
 })();
 </script></body></html>
