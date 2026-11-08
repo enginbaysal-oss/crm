@@ -165,7 +165,12 @@ main{max-width:1200px}
 </style>
 </head>
 <body>
-<section id="authGate" class="card" style="max-width:540px;margin:10vh auto 30px;padding:26px">
+<section id="authLoading" class="card" role="status" aria-live="polite" style="max-width:540px;margin:10vh auto 30px;padding:26px;text-align:center">
+ <div class="eyebrow">EmlakCRM / İlan Asistanı</div>
+ <h2 style="margin:12px 0">İlanlarınız açılıyor…</h2>
+ <p class="small">Hesabınız güvenli şekilde doğrulanıyor.</p>
+</section>
+<section id="authGate" hidden class="card" style="max-width:540px;margin:10vh auto 30px;padding:26px">
  <div class="eyebrow">EmlakCep / Kişiye Özel</div>
  <h1>Favori İlanlara Giriş</h1>
  <p class="small">Favori arama ve ilanlarınız sadece hesabınızla görüntülenir. E-posta adresinizle giriş yapın.</p>
@@ -288,7 +293,7 @@ async function enterPrivate(){
  }
  currentUser=user;transferLegacyData();
  rows=[];searchLabels={};load();applySentLedger();fillSearchFilter();
- $('authGate').hidden=true;$('privateMain').hidden=false;
+ $('authLoading').hidden=true;$('authGate').hidden=true;$('privateMain').hidden=false;
  render();await refreshFeed();await syncContactStatus();return true;
 }
 function reportAuth(s){$('authStatus').textContent=s;}
@@ -357,6 +362,7 @@ async function restoreAuth(){
   try{await restoreFromEmlakCrm();}
   catch(ssoError){reportAuth('Otomatik giriş tamamlanamadı: '+String(ssoError.message||ssoError)+'. Mevcut özel hesabınızla giriş yapabilirsiniz.');}
  }catch(e){reportAuth('Oturum kontrolü başarısız: '+String(e.message||e));}
+ finally{ $('authLoading').hidden=true; if(!currentUser)$('authGate').hidden=false; }
 }
 function logout(){
  const token=privateSession?.access_token;
