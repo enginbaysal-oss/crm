@@ -194,6 +194,12 @@ main{max-width:1200px}
   <label style="flex:1;min-width:230px">Bildirimlerin geldiği e-posta<input type="email" id="listingSourceEmail" autocomplete="email" placeholder="ornek@gmail.com" maxlength="254" style="display:block;width:100%;margin-top:5px"></label>
   <button type="button" class="primary" id="saveListingSourceEmail">Kaydet</button>
  </div>
+ <div class="controls" style="margin-top:11px;display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+ <button type="button" id="connectGmailBtn" class="primary" hidden>Gmail'i Güvenli Bağla</button>
+ <button type="button" id="disconnectGmailBtn" hidden>Gmail Bağlantısını Kes</button>
+ <span id="gmailConnectionStatus" role="status" class="small">Gmail bağlantısı kontrol ediliyor…</span>
+ </div>
+ <p class="small" style="margin:7px 0">Gmail bağlamak, yalnızca sizin onayınızla e-posta okuma izni verir. Bağlantı kurulması otomatik ilan çekiminin çalıştığı anlamına gelmez.</p>
  <p id="listingSourceStatus" class="small" role="status" style="margin:9px 0 0">E-posta kaynağı kontrol ediliyor…</p>
 </section>
 <div class="feed-bar"><div><strong>Kişiye özel favori ilanlar • Otomatik senkronizasyon</strong><div id="feedStatus" role="status">Güncel ilanlar kontrol ediliyor...</div></div><button id="refreshFeedBtn" class="primary" type="button">↻ Yenile</button></div>
@@ -289,6 +295,39 @@ function transferLegacyData(){
  }
  // Do not silently delete legacy data before the user can verify the migration.
 }
+const GMAIL_CONNECT_URL='https://jcjerwvibjetomqeelsy.supabase.co/functions/v1/crm-gmail-connect';
+async function requestGmailConnect(action,method='GET'){
+ const result=await apiCall('/functions/v1/crm-gmail-connect?action='+encodeURIComponent(action),{method});
+ const body=await result.json().catch(()=>({}));
+ if(!result.ok)throw Error(body.error||'Bağlantı servisine ulaşılamadı');
+ return body;
+}
+async function refreshGmailConnection(){
+ const label=$('gmailConnectionStatus'),connect=$('connectGmailBtn'),disconnect=$('disconnectGmailBtn');
+ if(!currentUser?.id)return;
+ connect.hidden=true;disconnect.hidden=true;
+ try{
+  const status=await requestGmailConnect('status');
+  if(status.connected){
+   label.textContent='Gmail erişim izni bağlı: '+status.email+'. Otomatik çekim servisi henüz etkin değil.';
+   disconnect.hidden=false;
+  }else{
+   label.textContent=status.configured?'Gmail bağlı değil. Bağlamak için Google üzerinden izin verin.':'Gmail bağlantısı için Google Cloud uygulama ayarları bekleniyor.';
+   connect.hidden=!status.configured;
+  }
+ }catch(error){label.textContent='Gmail bağlantısı kontrol edilemedi: '+String(error.message||error);}
+}
+async function startGmailConnect(){
+ const button=$('connectGmailBtn'),label=$('gmailConnectionStatus');
+ button.disabled=true;label.textContent='Google izin bağlantısı hazırlanıyor…';
+ try{const response=await requestGmailConnect('start','POST');if(!response.authorization_url||!response.authorization_url.startsWith('https://accounts.google.com/'))throw Error('Google bağlantısı geçersiz');location.assign(response.authorization_url)}
+ catch(error){label.textContent='Gmail bağlanamadı: '+String(error.message||error);button.disabled=false}
+}
+async function disconnectGmail(){
+ if(!confirm('Gmail okuma bağlantısını kaldırmak istiyor musunuz?'))return;
+ try{await requestGmailConnect('disconnect','POST');await refreshGmailConnection()}
+ catch(error){$('gmailConnectionStatus').textContent='Bağlantı kesilemedi: '+String(error.message||error)}
+}
 async function loadListingSourceEmail(){
  const field=$('listingSourceEmail'),status=$('listingSourceStatus');
  if(!currentUser?.id)return;
@@ -313,7 +352,7 @@ async function saveListingSourceEmail(){
    body:JSON.stringify({user_id:currentUser.id,notification_email:email,connection_status:'not_connected'})
   });
   if(!response.ok)throw Error('HTTP '+response.status);
-  status.textContent='Adres hesabınıza kaydedildi. Posta kutusuna erişim henüz bağlanmadı; bu alan tek başına otomatik ilan çekmez.';
+  status.textContent='Adres hesabınıza kaydedildi. Posta kutusuna erişim henüz bağlanmadı; bu alan tek başına otomatik ilan çekmez.';await refreshGmailConnection();
  }catch(error){status.textContent='Kaydedilemedi: '+String(error.message||error);}
  finally{button.disabled=false;}
 }
@@ -332,7 +371,7 @@ async function enterPrivate(){
  currentUser=user;transferLegacyData();
  rows=[];searchLabels={};load();applySentLedger();fillSearchFilter();
  $('authLoading').hidden=true;$('authGate').hidden=true;$('privateMain').hidden=false;
- render();await loadListingSourceEmail();await refreshFeed();await syncContactStatus();return true;
+ render();await loadListingSourceEmail();await refreshGmailConnection();await refreshFeed();await syncContactStatus();return true;
 }
 function reportAuth(s){$('authStatus').textContent=s;}
 async function signInPassword(){
@@ -386,6 +425,8 @@ async function restoreFromEmlakCrm(){
 async function restoreAuth(){
  try{
   await window.__emlakcrmVerifiedAccountPromise;
+  const gmailParam=new URLSearchParams(location.search).get('gmail_status');
+  if(gmailParam){history.replaceState(null,'',location.pathname);if(gmailParam==='connected')console.info('Gmail bağlantı izni kaydedildi');else console.info('Gmail bağlantı durumu:',gmailParam);}
   const hash=new URLSearchParams(location.hash.replace(/^#/,''));
   if(hash.get('access_token')&&hash.get('refresh_token')){
     privateSession={access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token')};
@@ -719,6 +760,8 @@ $('magicLogin').addEventListener('click',sendSignInLink);
 $('verifyCode').addEventListener('click',verifyEmailCode);
 $('logoutBtn').addEventListener('click',logout);
 $('saveListingSourceEmail').addEventListener('click',saveListingSourceEmail);
+$('connectGmailBtn').addEventListener('click',startGmailConnect);
+$('disconnectGmailBtn').addEventListener('click',disconnectGmail);
 restoreAuth();
 })();
 </script></body></html>
