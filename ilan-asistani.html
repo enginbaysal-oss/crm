@@ -649,12 +649,24 @@ function showDetail(){
  '<div class="note" id="notice">'+escapeHtml(r.notice||'Açıklama kontrolü zorunlu değil.')+'</div>'+
  '<label for="dealType">İlan türü</label><select id="dealType" '+(locked?'disabled':'')+'><option value="satilik">Satılık</option><option value="kiralik">Kiralık</option><option value="belirsiz">Belirsiz</option></select>'+
  '<hr><h2>İlan sahibine ilk mesaj</h2><textarea class="message" id="initialMessage" readonly spellcheck="false" aria-label="İlan sahibine gönderilecek mesaj" style="min-height:112px;display:block;">'+escapeHtml(message)+'</textarea>'+
- '<div class="controls" style="margin-top:10px"><button id="copyAndOpen" class="primary" '+(canPrepare?'':'disabled')+'>Mesajı Kopyala ve İlanı Aç ↗</button><button id="excludeListing">'+(r.status==='excluded'?'Tercihimi Geri Al':'Tercih Etmiyorum')+'</button></div><div class="controls" style="margin-top:8px"><button id="markSent" '+(canPrepare?'':'disabled')+'>Gönderdim, Kaydet</button></div>'+
+ '<div class="controls" style="margin-top:10px"><button id="copyAndOpen" class="primary">'+(canPrepare?'Mesajı Kopyala ve İlanı Aç ↗':'İlanı Tekrar Aç ↗')+'</button><button id="excludeListing">'+(r.status==='excluded'?'Tercihimi Geri Al':'Tercih Etmiyorum')+'</button></div><div class="controls" style="margin-top:8px"><button id="markSent" '+(canPrepare?'':'disabled')+'>Gönderdim, Kaydet</button></div>'+
  '<div class="small" style="margin-top:7px"><b>Sıra:</b> “Mesajı Kopyala ve İlanı Aç” düğmesine basın. Mesaj kopyalanır ve ilan yeni sekmede açılır. İletişim istemeyenlere yazmayın; uygunsa Ctrl + V ile yapıştırın. Mesaj otomatik gönderilmez. İletişim istemeyenlere yazmayın. “Gönderdim” yalnızca sizin tuttuğunuz kayıttır.</div>'+
  '<div class="small" style="margin-top:8px">Yanıtları ve görüşmeleri sahibinden.com üzerinden takip edebilirsiniz.</div>';
  $('dealType').value=r.type;
  $('dealType').addEventListener('change',e=>{if(locked)return;r.type=e.target.value;prepare(r);save();});
- $('copyAndOpen').addEventListener('click',async()=>{if(r.status!=='ready')return;const tab=window.open('about:blank','_blank');if(tab)tab.opener=null;const ok=await copy(r.type==='kiralik'?RENT:SALE,$('copyAndOpen'));if(!ok){if(tab)tab.close();return;}if(tab){tab.location.replace(r.url);}else{toast('Mesaj kopyalandı. Açılır pencere engellendi; tarayıcı ayarlarından izin verin.');}});
+ $('copyAndOpen').addEventListener('click',async()=>{
+  // Previously handled or excluded listings remain viewable without changing their status.
+  const destination=String(r.url||'');
+  if(!/^https:\/\/(?:www\.)?sahibinden\.com\/ilan\//i.test(destination)){toast('Geçerli sahibinden.com ilan bağlantısı bulunamadı.');return;}
+  const tab=window.open('about:blank','_blank');
+  if(tab)tab.opener=null;
+  if(r.status==='ready'){
+   const ok=await copy(r.type==='kiralik'?RENT:SALE,$('copyAndOpen'));
+   if(!ok){if(tab)tab.close();return;}
+  }
+  if(tab)tab.location.replace(destination);
+  else toast('Açılır pencere engellendi. Tarayıcıda bu site için izin verin.');
+ });
  $('excludeListing').addEventListener('click',()=>{if(r.status==='excluded'){r.status=r.previousStatus||'ready';delete r.previousStatus;r.notice='Tercih geri alındı.';}else{r.previousStatus=r.status;r.status='excluded';r.notice='Tercih edilmiyor; ilan gizlendi.';}closeDetails();save();});
  $('markSent').addEventListener('click',()=>{if(r.status!=='ready')return;r.status='sent';r.notice='Mesaj gönderildi olarak kaydedildi.';try{rememberSent(r.id);}catch(e){toast('Gönderim kaydı saklanamadı; tarayıcı depolama iznini kontrol edin.');}save();recordSentCloud(r.id);});
 
