@@ -325,6 +325,21 @@ async function verifyEmailCode(){
   await enterPrivate();
  }catch(e){reportAuth('Kod doğrulanamadı: '+String(e.message||e));}
 }
+async function restoreFromEmlakCrm(){
+ const crm=JSON.parse(sessionStorage.getItem('emlakcrm_auth_session_v1')||localStorage.getItem('emlakcrm_auth_remember_v1')||'null');
+ if(!crm?.access_token)throw Error('EmlakCRM oturumu bulunamadı');
+ const bridge=await fetch('https://jcjerwvibjetomqeelsy.supabase.co/functions/v1/emlakcrm-ilan-sso',{
+  method:'POST',headers:{apikey:API_KEY,Authorization:'Bearer '+crm.access_token,'Content-Type':'application/json'},body:'{}',cache:'no-store'
+ });
+ const result=await bridge.json().catch(()=>({}));
+ if(!bridge.ok||!result.token_hash)throw Error(result.error||'Tek giriş servisi yanıt vermedi');
+ const verified=await apiCall('/auth/v1/verify',{method:'POST',body:JSON.stringify({token_hash:result.token_hash,type:'magiclink'})});
+ const session=await verified.json().catch(()=>({}));
+ if(!verified.ok||!session.access_token||!session.refresh_token)throw Error(session.msg||session.error_description||'İlan Asistanı hesabı açılamadı');
+ privateSession=session;
+ localStorage.setItem(scopedPrivateSessionKey(),JSON.stringify(privateSession));
+ return enterPrivate();
+}
 async function restoreAuth(){
  try{
   await window.__emlakcrmVerifiedAccountPromise;
@@ -337,7 +352,10 @@ async function restoreAuth(){
     reportAuth('E-posta bağlantısı geçersiz veya süresi dolmuş: '+hash.get('error_description'));
     history.replaceState(null,'',location.pathname+location.search);
   } else privateSession=JSON.parse(localStorage.getItem(scopedPrivateSessionKey())||'null');
-  if(privateSession)await enterPrivate();
+  if(privateSession){if(await enterPrivate())return;}
+  reportAuth('EmlakCRM ile otomatik giriş yapılıyor...');
+  try{await restoreFromEmlakCrm();}
+  catch(ssoError){reportAuth('Otomatik giriş tamamlanamadı: '+String(ssoError.message||ssoError)+'. Mevcut özel hesabınızla giriş yapabilirsiniz.');}
  }catch(e){reportAuth('Oturum kontrolü başarısız: '+String(e.message||e));}
 }
 function logout(){
