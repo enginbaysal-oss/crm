@@ -742,7 +742,24 @@ async function refreshFeed(){
 }
 $('excludedToggle').addEventListener('click',()=>{showExcluded=!showExcluded;render();});
 $('dateToggle').addEventListener('click',()=>{showHistory=!showHistory;render();});
-$('refreshFeedBtn').addEventListener('click',refreshFeed);
+async function importGmailThenRefresh(){
+ const status=$('feedStatus'),button=$('refreshFeedBtn');
+ if(button.disabled)return;
+ button.disabled=true;
+ status.textContent='Gmail sahibinden.com bildirimleri taranıyor…';
+ let summary='';
+ try{
+  const r=await apiCall('/functions/v1/crm-gmail-sync',{method:'POST',body:'{}'});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok)throw Error(data.error||('HTTP '+r.status));
+  summary='Gmail taraması: '+(data.checked_messages||0)+' bildirim incelendi, '+(data.new_listings||0)+' yeni ilan eklendi.';
+ }catch(e){
+  summary='Gmail taraması yapılamadı: '+String(e.message||e)+'.';
+ }finally{button.disabled=false}
+ await refreshFeed();
+ status.textContent=summary+' '+status.textContent;
+}
+$('refreshFeedBtn').addEventListener('click',importGmailThenRefresh);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentUser)refreshFeed();});
 $('search').addEventListener('input',render);
 for(const id of ['dealFilter','propertyFilter','favoriteSearchFilter','filter','sort'])$(id).addEventListener('change',render);
