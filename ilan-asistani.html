@@ -4,7 +4,7 @@
 <style id="emlakcrm-access-pending">html{visibility:hidden!important}</style>
 <script>
 /* EmlakCRM abonelik ekran koruması; sunucu tarafı RLS ayrıca gereklidir. */
-(async function(){
+window.__emlakcrmVerifiedAccountPromise=(async function(){
  const base="https://tffvwxskvjuxoekwgdef.supabase.co",key="sb_publishable_ADLnhwviFBqWtBkq94Adag_ULlAuzUe";
  const home="https://enginbaysal-oss.github.io/EmlakCRM-Web/#account";
  try{
@@ -37,8 +37,13 @@
    const now=Date.now();allowed=(await res.json()).some(s=>s.status==="active"&&Date.parse(s.starts_at)<=now&&Date.parse(s.expires_at)>now);
   }
   if(!allowed)throw Error("Aktif abonelik yok");
+  if(!user?.id||!user?.email)throw Error("Giriş hesabı doğrulanamadı");
+  const activeAccount=localStorage.getItem("emlakcrm_active_account_v1");
+  if(activeAccount&&activeAccount!==user.id)throw Error("Tarayıcıda başka bir EmlakCRM hesabı aktif");
+  window.__emlakcrmVerifiedAccount={id:user.id,email:String(user.email).trim().toLowerCase()};
   document.getElementById("emlakcrm-access-pending")?.remove();
- }catch(e){location.replace(home);}
+  return window.__emlakcrmVerifiedAccount;
+ }catch(e){location.replace(home);throw e;}
 })();
 </script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -236,6 +241,11 @@ async function syncContactStatus(){if(!currentUser)return;try{const ledger=sentL
 async function recordSentCloud(id){if(!currentUser)return;try{const res=await apiCall('/rest/v1/crm_listing_contact_status?on_conflict=user_id,listing_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates'},body:JSON.stringify([{user_id:currentUser.id,listing_id:String(id),status:'sent'}])});if(!res.ok)throw new Error('HTTP '+res.status);}catch(e){console.warn('Gönderim durumu kaydedilemedi',e);toast('Gönderim yalnızca bu tarayıcıya kaydedildi; bulut bağlantısını kontrol edin.');}}
 const LEGACY_OWNER_ID='dd1c8258-2d3b-4428-aebd-5e2b9cda97ec';
 const SESSION_KEY='engin-crm-private-session-v1';
+function scopedPrivateSessionKey(){
+ const id=window.__emlakcrmVerifiedAccount?.id;
+ if(!id||!/^[0-9a-f-]{36}$/i.test(id))throw Error('EmlakCRM hesabı doğrulanmadı');
+ return SESSION_KEY+'__emlakcrm_user_'+id;
+}
 const API_BASE='https://jcjerwvibjetomqeelsy.supabase.co';
 const API_KEY='sb_publishable_tz0ZMLExOcLCDnGudSnS6A_ko8TD4Ig';
 let privateSession=null,currentUser=null;
@@ -250,7 +260,7 @@ async function checkUser(){
  let res=await apiCall('/auth/v1/user');
  if(!res.ok && privateSession?.refresh_token){
    const r=await apiCall('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:privateSession.refresh_token})});
-   if(r.ok){privateSession=await r.json();localStorage.setItem(SESSION_KEY,JSON.stringify(privateSession));res=await apiCall('/auth/v1/user');}
+   if(r.ok){privateSession=await r.json();localStorage.setItem(scopedPrivateSessionKey(),JSON.stringify(privateSession));res=await apiCall('/auth/v1/user');}
  }
  return res.ok?res.json():null;
 }
@@ -265,8 +275,17 @@ function transferLegacyData(){
  // Do not silently delete legacy data before the user can verify the migration.
 }
 async function enterPrivate(){
+ const account=await window.__emlakcrmVerifiedAccountPromise;
+ if(!account?.id||!account.email)throw Error('EmlakCRM oturumu doğrulanamadı');
  const user=await checkUser();
- if(!user){privateSession=null;localStorage.removeItem(SESSION_KEY);$('authStatus').textContent='Oturum doğrulanamadı. Giriş yapın.';return false;}
+ if(!user){privateSession=null;localStorage.removeItem(scopedPrivateSessionKey());$('authStatus').textContent='Oturum doğrulanamadı. Giriş yapın.';return false;}
+ if(String(user.email||'').trim().toLowerCase()!==account.email){
+  privateSession=null;currentUser=null;rows=[];searchLabels={};
+  localStorage.removeItem(scopedPrivateSessionKey());
+  $('privateMain').hidden=true;$('authGate').hidden=false;
+  $('authStatus').textContent='Bu İlan Asistanı oturumu başka bir hesaba ait. EmlakCRM ile aynı e-posta adresini kullanın. Önceki kayıtlar korunuyor.';
+  return false;
+ }
  currentUser=user;transferLegacyData();
  rows=[];searchLabels={};load();applySentLedger();fillSearchFilter();
  $('authGate').hidden=true;$('privateMain').hidden=false;
@@ -281,7 +300,7 @@ async function signInPassword(){
   const res=await apiCall('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});
   const data=await res.json();
   if(!res.ok)throw new Error(data.msg||data.error_description||data.message||'Giriş yapılamadı.');
-  privateSession=data;localStorage.setItem(SESSION_KEY,JSON.stringify(privateSession));
+  privateSession=data;localStorage.setItem(scopedPrivateSessionKey(),JSON.stringify(privateSession));
   await enterPrivate();
  }catch(e){reportAuth('Giriş başarısız: '+String(e.message||e));}
 }
@@ -302,21 +321,22 @@ async function verifyEmailCode(){
  try{
   const res=await apiCall('/auth/v1/verify',{method:'POST',body:JSON.stringify({email,token,type:'email'})});
   const data=await res.json();if(!res.ok)throw new Error(data.msg||data.message||'Kod geçerli değil');
-  privateSession=data;localStorage.setItem(SESSION_KEY,JSON.stringify(privateSession));
+  privateSession=data;localStorage.setItem(scopedPrivateSessionKey(),JSON.stringify(privateSession));
   await enterPrivate();
  }catch(e){reportAuth('Kod doğrulanamadı: '+String(e.message||e));}
 }
 async function restoreAuth(){
  try{
+  await window.__emlakcrmVerifiedAccountPromise;
   const hash=new URLSearchParams(location.hash.replace(/^#/,''));
   if(hash.get('access_token')&&hash.get('refresh_token')){
     privateSession={access_token:hash.get('access_token'),refresh_token:hash.get('refresh_token')};
-    localStorage.setItem(SESSION_KEY,JSON.stringify(privateSession));
+    localStorage.setItem(scopedPrivateSessionKey(),JSON.stringify(privateSession));
     history.replaceState(null,'',location.pathname+location.search);
   } else if(hash.get('error_description')){
     reportAuth('E-posta bağlantısı geçersiz veya süresi dolmuş: '+hash.get('error_description'));
     history.replaceState(null,'',location.pathname+location.search);
-  } else privateSession=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');
+  } else privateSession=JSON.parse(localStorage.getItem(scopedPrivateSessionKey())||'null');
   if(privateSession)await enterPrivate();
  }catch(e){reportAuth('Oturum kontrolü başarısız: '+String(e.message||e));}
 }
@@ -324,7 +344,7 @@ function logout(){
  const token=privateSession?.access_token;
  if(token)apiCall('/auth/v1/logout',{method:'POST'}).catch(()=>{});
  privateSession=null;currentUser=null;rows=[];searchLabels={};selected=null;detailOpen=false;
- localStorage.removeItem(SESSION_KEY);
+ localStorage.removeItem(scopedPrivateSessionKey());
  $('privateMain').hidden=true;$('detailBackdrop').hidden=true;$('authGate').hidden=false;
  reportAuth('Oturum kapatıldı. Başka bir hesaba ait ilanlar görünmez.');
 }
